@@ -10,9 +10,9 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ConversationHandler, ContextTypes
 
 # Bot configuration
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8687160226:AAHKPurDJS8kyxrblV0X8mZdSbFwFUV56Yw")
-ADMIN_ID = os.getenv("ADMIN_ID", "1922522807")
-GROUP_ID = os.getenv("GROUP_ID", "-1003862731449")
+BOT_TOKEN = "8687160226:AAHKPurDJS8kyxrblV0X8mZdSbFwFUV56Yw"
+ADMIN_ID = "1922522807"
+GROUP_ID = "-1003862731449"
 
 # Conversation states
 NAME, EMAIL, CITY, PHONE, CONFIRM = range(5)
@@ -195,58 +195,56 @@ approved_users = {}
 participants = {}
 user_temp_data = {}
 
-async def send_log(context, message, level="INFO"):
+def send_log(message, level="INFO"):
+    """Print log to console"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    try:
-        if context:
-            await context.bot.send_message(
-                GROUP_ID,
-                f"[{level}] {timestamp}\n{message}"
-            )
-    except Exception as e:
-        print(f"Failed to send log: {e}")
+    print(f"[{timestamp}] [{level}] {message}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if user_id == ADMIN_ID:
         await update.message.reply_text(
-            "Admin Panel\n\n"
-            "Admin Commands:\n"
+            "👑 *Admin Panel*\n\n"
+            "*Admin Commands:*\n"
             "/pending - Show pending users\n"
             "/approve <user_id> - Approve a user\n"
             "/reject <user_id> - Reject a user\n"
             "/users - List approved users\n"
             "/broadcast <message> - Broadcast message\n"
             "/stats - Show statistics\n"
-            "/logs - Show recent logs"
+            "/logs - Show recent logs",
+            parse_mode='Markdown'
         )
         return ConversationHandler.END
     
     elif user_id in approved_users:
         await update.message.reply_text(
-            "Welcome to Summertastic Contest Bot!\n\n"
+            "🎉 *Welcome to Summertastic Contest Bot!*\n\n"
             "Let's register you for the contest. Please enter your details:\n\n"
-            "Step 1/4: What is your full name?\n\n"
-            "Example: Rajesh Sharma"
+            "📝 *Step 1/4:* What is your *full name*?\n\n"
+            "Example: Rajesh Sharma",
+            parse_mode='Markdown'
         )
         return NAME
     
     elif user_id in pending_users:
         await update.message.reply_text(
-            "Pending Approval\n\n"
+            "⏳ *Pending Approval*\n\n"
             "Your access request has been sent to admin.\n"
-            "You will be notified once approved."
+            "You will be notified once approved.",
+            parse_mode='Markdown'
         )
         return ConversationHandler.END
     
     else:
-        keyboard = [[InlineKeyboardButton("Request Access", callback_data='request_access')]]
+        keyboard = [[InlineKeyboardButton("📝 Request Access", callback_data='request_access')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(
-            "Access Restricted\n\n"
+            "🔒 *Access Restricted*\n\n"
             "This bot is private. Click below to request access from admin.",
+            parse_mode='Markdown',
             reply_markup=reply_markup
         )
         return ConversationHandler.END
@@ -257,17 +255,19 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if len(name) < 3 or not re.match(r'^[a-zA-Z\s\.]+$', name):
         await update.message.reply_text(
-            "Invalid name! Use only letters and spaces (minimum 3 characters).\n"
-            "Please enter your full name:"
+            "❌ Invalid name! Use only letters and spaces (minimum 3 characters).\n"
+            "Please enter your *full name*:",
+            parse_mode='Markdown'
         )
         return NAME
     
     user_temp_data[user_id] = {'name': name}
     
     await update.message.reply_text(
-        f"Name saved: {name}\n\n"
-        "Step 2/4: What is your email address?\n\n"
-        "Example: yourname@gmail.com"
+        f"✅ Name saved: *{name}*\n\n"
+        "📝 *Step 2/4:* What is your *email address*?\n\n"
+        "Example: yourname@gmail.com",
+        parse_mode='Markdown'
     )
     return EMAIL
 
@@ -277,17 +277,19 @@ async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
         await update.message.reply_text(
-            "Invalid email format.\n"
-            "Please enter a valid email address:"
+            "❌ Invalid email format.\n"
+            "Please enter a valid *email address*:",
+            parse_mode='Markdown'
         )
         return EMAIL
     
     user_temp_data[user_id]['email'] = email
     
     await update.message.reply_text(
-        f"Email saved: {email}\n\n"
-        "Step 3/4: What is your city?\n\n"
-        "Example: Mumbai, Delhi, Bangalore"
+        f"✅ Email saved: *{email}*\n\n"
+        "📝 *Step 3/4:* What is your *city*?\n\n"
+        "Example: Mumbai, Delhi, Bangalore",
+        parse_mode='Markdown'
     )
     return CITY
 
@@ -297,17 +299,19 @@ async def get_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if len(city) < 2:
         await update.message.reply_text(
-            "Invalid city name.\n"
-            "Please enter your city:"
+            "❌ Invalid city name.\n"
+            "Please enter your *city*:",
+            parse_mode='Markdown'
         )
         return CITY
     
     user_temp_data[user_id]['city'] = city
     
     await update.message.reply_text(
-        f"City saved: {city}\n\n"
-        "Step 4/4: What is your phone number?\n\n"
-        "Example: 9876543210 (10 digits)"
+        f"✅ City saved: *{city}*\n\n"
+        "📝 *Step 4/4:* What is your *phone number*?\n\n"
+        "Example: 9876543210 (10 digits)",
+        parse_mode='Markdown'
     )
     return PHONE
 
@@ -317,8 +321,9 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if not re.match(r'^[6-9]\d{9}$', phone):
         await update.message.reply_text(
-            "Invalid phone number.\n"
-            "Please enter a valid 10-digit phone number (starting with 6,7,8,9):"
+            "❌ Invalid phone number.\n"
+            "Please enter a valid 10-digit *phone number* (starting with 6,7,8,9):",
+            parse_mode='Markdown'
         )
         return PHONE
     
@@ -326,19 +331,19 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = user_temp_data[user_id]
     
     summary = f"""
-Please confirm your details:
+📋 *Please confirm your details:*
 
-Name: {data['name']}
-Email: {data['email']}
-City: {data['city']}
-Phone: {data['phone']}
+👤 *Name:* {data['name']}
+📧 *Email:* {data['email']}
+🏙️ *City:* {data['city']}
+📱 *Phone:* {data['phone']}
 
-Consent: Agreed to all terms
+🤝 *Consent:* Agreed to all terms
 
-Reply with YES to register or NO to cancel.
+Reply with *YES* to register or *NO* to cancel.
 """
     
-    await update.message.reply_text(summary)
+    await update.message.reply_text(summary, parse_mode='Markdown')
     return CONFIRM
 
 async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -347,8 +352,9 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     if answer != 'YES':
         await update.message.reply_text(
-            "Registration Cancelled\n\n"
-            "Use /start to begin again."
+            "❌ *Registration Cancelled*\n\n"
+            "Use /start to begin again.",
+            parse_mode='Markdown'
         )
         if user_id in user_temp_data:
             del user_temp_data[user_id]
@@ -357,8 +363,9 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
     data = user_temp_data[user_id]
     
     processing_msg = await update.message.reply_text(
-        "Registering you on the website...\n\n"
-        "Please wait, this may take a few seconds."
+        "🔄 *Registering you on the website...*\n\n"
+        "Please wait, this may take a few seconds.",
+        parse_mode='Markdown'
     )
     
     payload = {
@@ -387,60 +394,64 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
                 }
                 
                 success_msg = f"""
-Registration Successful!
+✅ *Registration Successful!*
 
-Your Participant ID: {participant_id}
+🎫 *Your Participant ID:* `{participant_id}`
 
-Registered Details:
-Name: {data['name']}
-Email: {data['email']}
-City: {data['city']}
-Phone: {data['phone']}
+📋 *Registered Details:*
+👤 Name: {data['name']}
+📧 Email: {data['email']}
+🏙️ City: {data['city']}
+📱 Phone: {data['phone']}
 
-Automated Submission Active!
+🤖 *Automated Submission Active!*
 
-- Bot will auto-submit correct answers
-- Every 30 minutes from 10:00 AM - 1:00 PM IST
-- Duration: 15 days
-- 6 questions per slot
-- 100% correct answers guaranteed
+• Bot will auto-submit correct answers
+• Every 30 minutes from 10:00 AM - 1:00 PM IST
+• Duration: 15 days
+• 6 questions per slot
+• 100% correct answers guaranteed
 
-You're all set! No manual work needed.
+✅ You're all set! No manual work needed.
 
 Use /status to check your registration.
 """
                 
-                await processing_msg.edit_text(success_msg)
+                await processing_msg.edit_text(success_msg, parse_mode='Markdown')
                 
-                await send_log(context, f"New registration: {data['name']} (ID: {participant_id})", "REGISTER")
+                send_log(f"New registration: {data['name']} (ID: {participant_id})", "REGISTER")
                 
                 await context.bot.send_message(
                     ADMIN_ID,
-                    f"New Registration\n\n"
-                    f"Name: {data['name']}\n"
-                    f"Email: {data['email']}\n"
-                    f"City: {data['city']}\n"
-                    f"Phone: {data['phone']}\n"
-                    f"ID: {participant_id}"
+                    f"📝 *New Registration*\n\n"
+                    f"👤 Name: {data['name']}\n"
+                    f"📧 Email: {data['email']}\n"
+                    f"🏙️ City: {data['city']}\n"
+                    f"📱 Phone: {data['phone']}\n"
+                    f"🎫 ID: `{participant_id}`",
+                    parse_mode='Markdown'
                 )
             else:
                 await processing_msg.edit_text(
-                    f"Registration Failed\n\n"
+                    f"❌ *Registration Failed*\n\n"
                     f"Could not get participant ID from server.\n\n"
-                    f"Please try again later."
+                    f"Please try again later.",
+                    parse_mode='Markdown'
                 )
         else:
             await processing_msg.edit_text(
-                f"Registration Failed\n\n"
+                f"❌ *Registration Failed*\n\n"
                 f"Server error: {response.status_code}\n\n"
-                f"Please try again later."
+                f"Please try again later.",
+                parse_mode='Markdown'
             )
     
     except Exception as e:
         await processing_msg.edit_text(
-            f"Registration Failed\n\n"
+            f"❌ *Registration Failed*\n\n"
             f"Error: {str(e)[:100]}\n\n"
-            f"Please try again later."
+            f"Please try again later.",
+            parse_mode='Markdown'
         )
     
     if user_id in user_temp_data:
@@ -454,8 +465,9 @@ async def cancel_registration(update: Update, context: ContextTypes.DEFAULT_TYPE
         del user_temp_data[user_id]
     
     await update.message.reply_text(
-        "Registration Cancelled\n\n"
-        "Use /start to begin again."
+        "❌ *Registration Cancelled*\n\n"
+        "Use /start to begin again.",
+        parse_mode='Markdown'
     )
     return ConversationHandler.END
 
@@ -469,9 +481,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if query.data == 'request_access':
         if user_id in approved_users:
-            await query.edit_message_text("You already have access! Use /start to register.")
+            await query.edit_message_text("✅ You already have access!\nUse /start to register.")
         elif user_id in pending_users:
-            await query.edit_message_text("Your request is already pending.")
+            await query.edit_message_text("⏳ Your request is already pending.")
         else:
             pending_users[user_id] = {
                 'username': username,
@@ -480,24 +492,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             }
             
             keyboard = [
-                [InlineKeyboardButton("Approve", callback_data=f'approve_{user_id}'),
-                 InlineKeyboardButton("Reject", callback_data=f'reject_{user_id}')]
+                [InlineKeyboardButton("✅ Approve", callback_data=f'approve_{user_id}'),
+                 InlineKeyboardButton("❌ Reject", callback_data=f'reject_{user_id}')]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             await context.bot.send_message(
                 ADMIN_ID,
-                f"New Access Request!\n\n"
-                f"User ID: {user_id}\n"
-                f"Name: {first_name}\n"
-                f"Username: @{username}",
+                f"📢 *New Access Request!*\n\n"
+                f"🆔 User ID: `{user_id}`\n"
+                f"👤 Name: {first_name}\n"
+                f"📝 Username: @{username}",
+                parse_mode='Markdown',
                 reply_markup=reply_markup
             )
             
             await query.edit_message_text(
-                "Request Sent!\n\n"
+                "✅ *Request Sent!*\n\n"
                 "You will be notified once approved.\n"
-                "Use /start again after approval to register."
+                "Use /start again after approval to register.",
+                parse_mode='Markdown'
             )
     
     elif query.data.startswith('approve_'):
@@ -513,12 +527,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             await context.bot.send_message(
                 target_user,
-                "Access Granted!\n\n"
-                "Welcome! Please use /start to register for the contest."
+                "✅ *Access Granted!*\n\n"
+                "Welcome! Please use /start to register for the contest.",
+                parse_mode='Markdown'
             )
             
-            await query.edit_message_text(f"User {target_user} has been approved!")
-            await send_log(context, f"Admin approved user {target_user}", "APPROVE")
+            await query.edit_message_text(f"✅ User {target_user} has been approved!")
+            send_log(f"Admin approved user {target_user}", "APPROVE")
     
     elif query.data.startswith('reject_'):
         if str(query.from_user.id) != ADMIN_ID:
@@ -532,12 +547,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             await context.bot.send_message(
                 target_user,
-                "Access Denied\n\n"
-                "Your request has been rejected by admin."
+                "❌ *Access Denied*\n\n"
+                "Your request has been rejected by admin.",
+                parse_mode='Markdown'
             )
             
-            await query.edit_message_text(f"User {target_user} has been rejected!")
-            await send_log(context, f"Admin rejected user {target_user}", "REJECT")
+            await query.edit_message_text(f"❌ User {target_user} has been rejected!")
+            send_log(f"Admin rejected user {target_user}", "REJECT")
 
 def submit_answer(participant_id, email, phone, contest_day, slot_index, question_index, question_data):
     slot = SLOTS[slot_index - 1]
@@ -595,14 +611,13 @@ def run_contest_submission_sync():
     if not current_slot or current_slot > 6:
         return
     
-    print(f"\nAUTOMATIC SUBMISSION - {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Day {contest_day}, Slot {current_slot} ({SLOTS[current_slot-1]['label']})")
-    print(f"Total participants: {len(participants)}")
+    send_log(f"AUTOMATIC SUBMISSION - Day {contest_day}, Slot {current_slot} ({SLOTS[current_slot-1]['label']})", "SUBMISSION")
+    send_log(f"Total participants: {len(participants)}", "INFO")
     
     day_questions = QUESTIONS[contest_day - 1]
     
     for user_id, data in participants.items():
-        print(f"\nSubmitting for {data['name']} (ID: {data['participant_id']})")
+        send_log(f"Submitting for {data['name']} (ID: {data['participant_id']})", "INFO")
         success_count = 0
         
         for q_index, question in enumerate(day_questions, 1):
@@ -618,32 +633,19 @@ def run_contest_submission_sync():
             
             if success:
                 success_count += 1
-                print(f"  Question {q_index}: Correct answer submitted")
-            else:
-                print(f"  Question {q_index}: Failed")
             
             time.sleep(0.5)
         
-        print(f"  Result: {success_count}/6 correct")
+        send_log(f"Result for {data['name']}: {success_count}/6 correct", "INFO")
     
-    print(f"\nAutomatic submission completed for Slot {current_slot}\n")
+    send_log(f"Automatic submission completed for Slot {current_slot}", "SUCCESS")
 
 def schedule_contest():
-    print("=" * 50)
-    print("SUMMERTASTIC AUTO BOT STARTED")
-    print("=" * 50)
-    print("Contest Duration: 15 days")
-    print("Active Hours: 10:00 AM - 1:00 PM IST")
-    print("Submissions every 30 minutes:")
-    print("   10:00 AM - Slot 1")
-    print("   10:30 AM - Slot 2")
-    print("   11:00 AM - Slot 3")
-    print("   11:30 AM - Slot 4")
-    print("   12:00 PM - Slot 5")
-    print("   12:30 PM - Slot 6")
-    print("=" * 50)
-    print("Bot will automatically submit correct answers!")
-    print("=" * 50)
+    send_log("SUMMERTASTIC AUTO BOT STARTED", "START")
+    send_log("Contest Duration: 15 days", "INFO")
+    send_log("Active Hours: 10:00 AM - 1:00 PM IST", "INFO")
+    send_log("Submissions every 30 minutes at: 10:00, 10:30, 11:00, 11:30, 12:00, 12:30", "INFO")
+    send_log("Bot will automatically submit correct answers!", "INFO")
     
     schedule.every().day.at("10:00").do(run_contest_submission_sync)
     schedule.every().day.at("10:30").do(run_contest_submission_sync)
@@ -659,27 +661,27 @@ def schedule_contest():
 # Admin Commands
 async def pending_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("❌ Admin only!")
         return
     
     if not pending_users:
-        await update.message.reply_text("No pending requests.")
+        await update.message.reply_text("📭 No pending requests.")
         return
     
-    message = "Pending Users:\n\n"
+    message = "📋 *Pending Users:*\n\n"
     for uid, data in pending_users.items():
-        message += f"ID: {uid} - {data['name']} (@{data['username']})\n"
-        message += f"Time: {data['requested_at']}\n\n"
+        message += f"🆔 `{uid}` - {data['name']} (@{data['username']})\n"
+        message += f"   ⏰ {data['requested_at']}\n\n"
     
-    await update.message.reply_text(message)
+    await update.message.reply_text(message, parse_mode='Markdown')
 
 async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("❌ Admin only!")
         return
     
     if not context.args:
-        await update.message.reply_text("Usage: /approve <user_id>")
+        await update.message.reply_text("Usage: `/approve <user_id>`", parse_mode='Markdown')
         return
     
     target_user = context.args[0]
@@ -690,21 +692,22 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await context.bot.send_message(
             target_user,
-            "Access Granted! Please use /start to register."
+            "✅ *Access Granted!*\n\nPlease use /start to register for the contest.",
+            parse_mode='Markdown'
         )
         
-        await update.message.reply_text(f"User {target_user} approved!")
-        await send_log(context, f"Admin approved user {target_user}", "APPROVE")
+        await update.message.reply_text(f"✅ User {target_user} approved!")
+        send_log(f"Admin approved user {target_user}", "APPROVE")
     else:
-        await update.message.reply_text("User not found!")
+        await update.message.reply_text("❌ User not found!")
 
 async def reject_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("❌ Admin only!")
         return
     
     if not context.args:
-        await update.message.reply_text("Usage: /reject <user_id>")
+        await update.message.reply_text("Usage: `/reject <user_id>`", parse_mode='Markdown')
         return
     
     target_user = context.args[0]
@@ -714,39 +717,40 @@ async def reject_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await context.bot.send_message(
             target_user,
-            "Access Denied. Your request has been rejected."
+            "❌ *Access Denied*\n\nYour request has been rejected.",
+            parse_mode='Markdown'
         )
         
-        await update.message.reply_text(f"User {target_user} rejected!")
-        await send_log(context, f"Admin rejected user {target_user}", "REJECT")
+        await update.message.reply_text(f"❌ User {target_user} rejected!")
+        send_log(f"Admin rejected user {target_user}", "REJECT")
     else:
-        await update.message.reply_text("User not found!")
+        await update.message.reply_text("❌ User not found!")
 
 async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("❌ Admin only!")
         return
     
     if not approved_users:
-        await update.message.reply_text("No approved users.")
+        await update.message.reply_text("📭 No approved users.")
         return
     
-    message = "Approved Users:\n\n"
+    message = "👥 *Approved Users:*\n\n"
     for uid, data in approved_users.items():
         if uid in participants:
-            message += f"ID: {uid} - {data['name']} (Registered: Yes, ID: {participants[uid]['participant_id']})\n"
+            message += f"✅ `{uid}` - {data['name']} (ID: {participants[uid]['participant_id']})\n"
         else:
-            message += f"ID: {uid} - {data['name']} (Registered: No)\n"
+            message += f"⭕ `{uid}` - {data['name']} (Not registered)\n"
     
-    await update.message.reply_text(message)
+    await update.message.reply_text(message, parse_mode='Markdown')
 
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("❌ Admin only!")
         return
     
     if not context.args:
-        await update.message.reply_text("Usage: /broadcast <message>")
+        await update.message.reply_text("Usage: `/broadcast <message>`", parse_mode='Markdown')
         return
     
     message = ' '.join(context.args)
@@ -754,37 +758,47 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent = 0
     for user_id in approved_users:
         try:
-            await context.bot.send_message(user_id, f"Announcement: {message}")
+            await context.bot.send_message(
+                user_id, 
+                f"📢 *Announcement*\n\n{message}", 
+                parse_mode='Markdown'
+            )
             sent += 1
             time.sleep(0.1)
         except:
             pass
     
-    await update.message.reply_text(f"Broadcast sent to {sent} users!")
-    await send_log(context, f"Broadcast sent to {sent} users", "BROADCAST")
+    await update.message.reply_text(f"✅ Broadcast sent to {sent} users!")
+    send_log(f"Broadcast sent to {sent} users", "BROADCAST")
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("❌ Admin only!")
         return
     
-    stats_text = f"""Bot Statistics:
+    stats_text = f"""📊 *Bot Statistics*
 
-Approved Users: {len(approved_users)}
-Pending Requests: {len(pending_users)}
-Registered for Contest: {len(participants)}
-Active Hours: 10:00 AM - 1:00 PM IST
-Auto-submit: Active
-Correct Answers: 100%"""
+👥 Approved Users: {len(approved_users)}
+⏳ Pending Requests: {len(pending_users)}
+✅ Registered for Contest: {len(participants)}
+⏰ Active Hours: 10:00 AM - 1:00 PM IST
+🤖 Auto-submit: Active
+✅ Correct Answers: 100%"""
     
-    await update.message.reply_text(stats_text)
+    await update.message.reply_text(stats_text, parse_mode='Markdown')
 
 async def logs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("❌ Admin only!")
         return
     
-    await update.message.reply_text(f"Logs are sent to the log group.\n\nGroup ID: {GROUP_ID}")
+    await update.message.reply_text(
+        f"📋 *Logs Information*\n\n"
+        f"Logs are printed in the Railway console.\n"
+        f"Group ID for logs: `{GROUP_ID}`\n\n"
+        f"Check Railway deployment logs for detailed submission history.",
+        parse_mode='Markdown'
+    )
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -792,63 +806,11 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id in participants:
         data = participants[user_id]
         await update.message.reply_text(
-            f"Registration Status:\n\n"
-            f"Name: {data['name']}\n"
-            f"Participant ID: {data['participant_id']}\n"
-            f"Email: {data['email']}\n"
-            f"Phone: {data['phone']}\n"
-            f"Auto-submit: Enabled"
-        )
-    else:
-        await update.message.reply_text("Not registered. Use /start to register.")
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    help_text = """Summertastic Contest Bot Help
-
-How to Register:
-1. Send /start
-2. Enter your full name
-3. Enter your email address
-4. Enter your city
-5. Enter your phone number
-6. Confirm your details
-
-Bot Features:
-- Auto-submits correct answers every 30 min
-- Active hours: 10:00 AM - 1:00 PM IST
-- Duration: 15 days
-- 6 questions per slot
-- 100% correct answers
-
-Commands:
-/start - Start registration
-/status - Check registration status
-/help - Show this help
-
-Admin Commands:
-/pending - View pending requests
-/approve <id> - Approve a user
-/reject <id> - Reject a user
-/users - List approved users
-/broadcast <msg> - Send announcement
-/stats - View statistics
-/logs - View logs"""
-    
-    await update.message.reply_text(help_text)
-
-def main():
-    # Start schedule in background thread
-    schedule_thread = threading.Thread(target=schedule_contest, daemon=True)
-    schedule_thread.start()
-    
-    # Create bot application
-    app = Application.builder().token(BOT_TOKEN).build()
-    
-    # Conversation handler for registration
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
-        states={
-            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
-            EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_email)],
-            CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
-           
+            f"✅ *Your Registration Status*\n\n"
+            f"👤 Name: {data['name']}\n"
+            f"🎫 Participant ID: `{data['participant_id']}`\n"
+            f"📧 Email: {data['email']}\n"
+            f"📱 Phone: {data['phone']}\n"
+            f"🤖 Auto-submit: Enabled\n"
+            f"✅ Status: Active",
+            parse_mode='Markdown'
