@@ -5,6 +5,7 @@ import time
 import threading
 import os
 import re
+import asyncio
 from datetime import datetime, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ConversationHandler, ContextTypes
@@ -194,29 +195,233 @@ pending_users = {}
 approved_users = {}
 participants = {}
 user_temp_data = {}
-
-# Track submissions for notifications
-submission_tracker = {}
+bot_app = None
 
 def send_log(message, level="INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] [{level}] {message}")
 
 def is_weekday():
-    """Check if today is Monday to Friday (0=Monday, 4=Friday, 5=Saturday, 6=Sunday)"""
+    """Check if today is Monday to Friday"""
     return datetime.now().weekday() < 5
 
-async def send_log_to_group(context, message, level="INFO"):
-    """Send log to the configured group"""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+async def send_submission_notification(user_id, name, slot_label, question_num, correct_answer, status):
+    """Send notification to user about submission - ASYNC"""
+    global bot_app
+    if not bot_app:
+        return
+    
+    if status:
+        message = f"""
+✅ *Answer Correct!*
+
+👤 *Participant:* {name}
+⏰ *Slot:* {slot_label}
+❓ *Question {question_num}*
+🎯 *Your Answer:* {correct_answer} ✓
+
+✨ Your correct answer has been recorded!
+"""
+    else:
+        message = f"""
+❌ *Submission Failed*
+
+👤 *Participant:* {name}
+⏰ *Slot:* {slot_label}
+❓ *Question {question_num}*
+
+⚠️ Failed to submit answer. Please contact admin.
+"""
+    
     try:
-        if context:
-            await context.bot.send_message(
-                GROUP_ID,
-                f"[{level}] {timestamp}\n{message}"
-            )
+        await bot_app.bot.send_message(user_id, message, parse_mode='Markdown')
     except Exception as e:
-        print(f"Failed to send log to group: {e}")
+        send_log(f"Failed to notify user {user_id}: {e}", "ERROR")
+
+def submit_answer_sync(participant_id, email, phone, contest_day, slot_index, question_index, question_data):
+    """Submit a single answer - SYNC version"""
+    slot = SLOTS[slot_index - 1]
+    correct_index = question_data['correct']
+    correct_value = question_data['correct_value']
+    
+    options = question_data['options']
+    options_prompt = f"A: {options[0]} | B: {options[1]} | C: {options[2]}"
+    
+    submitted_at = datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    
+    payload = {
+        "contest_date": datetime.now().strftime("%Y-%m-%d"),
+        "contest_day": contest_day,
+        "slot_index": slot_index,
+        "slot_label": slot['label'],
+        "question_text": "Which character did you spot right now?",
+        "options_prompt": options_prompt,
+        "selected_option": ["A", "B", "C"][correct_index],
+        "selected_value": correct_value,
+        "correct_value": correct_value,
+        "is_correct": 1,
+        "submitted_at": submitted_at,
+        "participant_id": int(participant_id),
+        "phone": phone,
+        "email": email
+    }
+    
+    try:
+        response = requests.post(SUBMIT_API, json=payload, headers=HEADERS, timeout=30)
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok') == True:
+                return True, "Correct answer submitted successfully!"
+            else:
+                return True, "Submitted successfully"
+        return False, f"HTTP Error: {response.status_code}"
+    except Exception as e:
+        return False, str(e)
+
+def run_contest_submission_sync():
+    """AUTOMATIC SUBMISSION - Runs every 30 minutes, Monday to Friday only"""
+    global bot_app
+    
+    now = datetime.now()
+    
+    # Check if it's weekday (Monday to Friday)
+    if not is_weekday():
+        weekday_name = now.strftime("%A")
+        send_log(f"Skipped: {weekday_name} - Bot only runs Monday to Friday", "INFO")
+        return
+    
+    # Only run between 10 AM and 1 PM
+    if now.hour < 10 or now.hour >= 13:
+        return
+    
+    start_date = datetime(2026, 5, 20)
+    contest_day = (now - start_date).days + 1
+    
+    if contest_day < 1 or contest_day > 15:
+        return
+    
+    current_time = now.strftime("%H:%M")
+    current_slot = None
+    current_slot_label = None
+    
+    for slot in SLOTS:
+        if current_time >= slot['time']:
+            current_slot = slot['slot']
+            current_slot_label = slot['label']
+    
+    if not current_slot or current_slot > 6:
+        return
+    
+    send_log(f"Auto submission - Day {contest_day}, Slot {current_slot} ({current_slot_label})", "SUBMISSION")
+    send_log(f"Total participants: {len(participants)}", "INFO")
+    
+    day_questions = QUESTIONS[contest_day - 1]
+    
+    for user_id, data in participants.items():
+        send_log(f"Submitting for {data['name']} (ID: {data['participant_id']})", "INFO")
+        success_count = 0
+        
+        for q_index, question in enumerate(day_questions, 1):
+            success, message = submit_answer_sync(
+                data['participant_id'],
+                data['email'],
+                data['phone'],
+                contest_day,
+                current_slot,
+                q_index,
+                question
+            )
+            
+            if success:
+                success_count += 1
+                correct_answer = question['correct_value']
+                send_log(f"  ✅ Question {q_index}: {correct_answer} - CORRECT", "SUCCESS")
+                
+                # Send notification using asyncio
+                if bot_app:
+                    try:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(
+                            send_submission_notification(
+                                user_id, 
+                                data['name'], 
+                                current_slot_label, 
+                                q_index, 
+                                correct_answer, 
+                                True
+                            )
+                        )
+                        loop.close()
+                    except Exception as e:
+                        send_log(f"Notification error: {e}", "ERROR")
+            else:
+                send_log(f"  ❌ Question {q_index}: Failed - {message}", "ERROR")
+                
+                # Send failure notification
+                if bot_app:
+                    try:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(
+                            send_submission_notification(
+                                user_id, 
+                                data['name'], 
+                                current_slot_label, 
+                                q_index, 
+                                None, 
+                                False
+                            )
+                        )
+                        loop.close()
+                    except Exception as e:
+                        send_log(f"Notification error: {e}", "ERROR")
+            
+            time.sleep(0.5)
+        
+        send_log(f"Result for {data['name']}: {success_count}/6 correct", "INFO")
+        
+        # Send daily summary to user
+        if success_count == 6 and bot_app:
+            summary_msg = f"""
+🏆 *Daily Submission Complete!*
+
+👤 *{data['name']}*
+📅 *Day {contest_day}* | *Slot {current_slot}*
+⏰ *Time:* {current_slot_label}
+
+✅ *All 6 answers submitted correctly!*
+
+Keep up the great work! 🎉
+"""
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(bot_app.bot.send_message(user_id, summary_msg, parse_mode='Markdown'))
+                loop.close()
+            except Exception as e:
+                send_log(f"Summary notification error: {e}", "ERROR")
+    
+    send_log(f"Submission completed for Slot {current_slot}", "SUCCESS")
+
+def schedule_contest():
+    send_log("SUMMERTASTIC AUTO BOT STARTED", "START")
+    send_log("Contest Duration: 15 days", "INFO")
+    send_log("Active Hours: 10:00 AM - 1:00 PM IST", "INFO")
+    send_log("Active Days: Monday to Friday ONLY", "INFO")
+    send_log("Weekends (Saturday & Sunday): Bot will be idle", "INFO")
+    send_log("Users will receive notifications for every correct answer", "INFO")
+    
+    schedule.every().day.at("10:00").do(run_contest_submission_sync)
+    schedule.every().day.at("10:30").do(run_contest_submission_sync)
+    schedule.every().day.at("11:00").do(run_contest_submission_sync)
+    schedule.every().day.at("11:30").do(run_contest_submission_sync)
+    schedule.every().day.at("12:00").do(run_contest_submission_sync)
+    schedule.every().day.at("12:30").do(run_contest_submission_sync)
+    
+    while True:
+        schedule.run_pending()
+        time.sleep(30)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -596,200 +801,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(f"❌ User {target_user} has been rejected!")
             send_log(f"Admin rejected user {target_user}", "REJECT")
 
-def submit_answer(participant_id, email, phone, contest_day, slot_index, question_index, question_data):
-    slot = SLOTS[slot_index - 1]
-    correct_index = question_data['correct']
-    correct_value = question_data['correct_value']
-    
-    options = question_data['options']
-    options_prompt = f"A: {options[0]} | B: {options[1]} | C: {options[2]}"
-    
-    submitted_at = datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-    
-    payload = {
-        "contest_date": datetime.now().strftime("%Y-%m-%d"),
-        "contest_day": contest_day,
-        "slot_index": slot_index,
-        "slot_label": slot['label'],
-        "question_text": "Which character did you spot right now?",
-        "options_prompt": options_prompt,
-        "selected_option": ["A", "B", "C"][correct_index],
-        "selected_value": correct_value,
-        "correct_value": correct_value,
-        "is_correct": 1,
-        "submitted_at": submitted_at,
-        "participant_id": int(participant_id),
-        "phone": phone,
-        "email": email
-    }
-    
-    try:
-        response = requests.post(SUBMIT_API, json=payload, headers=HEADERS, timeout=30)
-        if response.status_code == 200:
-            result = response.json()
-            if result.get('ok') == True:
-                return True, "Correct answer submitted successfully!"
-            else:
-                return True, "Submitted but response missing 'ok': true"
-        return False, f"HTTP Error: {response.status_code}"
-    except Exception as e:
-        return False, str(e)
-
-async def send_submission_notification(context, user_id, name, slot_label, question_num, correct_answer, status):
-    """Send notification to user about submission"""
-    if status:
-        message = f"""
-✅ *Answer Correct!*
-
-👤 *Participant:* {name}
-⏰ *Slot:* {slot_label}
-❓ *Question {question_num}*
-🎯 *Your Answer:* {correct_answer} ✓
-
-✨ Your correct answer has been recorded!
-"""
-    else:
-        message = f"""
-❌ *Submission Failed*
-
-👤 *Participant:* {name}
-⏰ *Slot:* {slot_label}
-❓ *Question {question_num}*
-
-⚠️ Failed to submit answer. Please contact admin.
-"""
-    
-    try:
-        await context.bot.send_message(user_id, message, parse_mode='Markdown')
-    except Exception as e:
-        send_log(f"Failed to notify user {user_id}: {e}", "ERROR")
-
-def run_contest_submission_sync(context=None):
-    """AUTOMATIC SUBMISSION - Runs every 30 minutes, Monday to Friday only"""
-    now = datetime.now()
-    
-    # Check if it's weekday (Monday to Friday)
-    if not is_weekday():
-        weekday_name = now.strftime("%A")
-        send_log(f"Skipped: {weekday_name} - Bot only runs Monday to Friday", "INFO")
-        return
-    
-    # Only run between 10 AM and 1 PM
-    if now.hour < 10 or now.hour >= 13:
-        return
-    
-    start_date = datetime(2026, 5, 20)
-    contest_day = (now - start_date).days + 1
-    
-    if contest_day < 1 or contest_day > 15:
-        return
-    
-    current_time = now.strftime("%H:%M")
-    current_slot = None
-    current_slot_label = None
-    
-    for slot in SLOTS:
-        if current_time >= slot['time']:
-            current_slot = slot['slot']
-            current_slot_label = slot['label']
-    
-    if not current_slot or current_slot > 6:
-        return
-    
-    send_log(f"Auto submission - Day {contest_day}, Slot {current_slot} ({current_slot_label})", "SUBMISSION")
-    send_log(f"Total participants: {len(participants)}", "INFO")
-    
-    day_questions = QUESTIONS[contest_day - 1]
-    
-    for user_id, data in participants.items():
-        send_log(f"Submitting for {data['name']} (ID: {data['participant_id']})", "INFO")
-        success_count = 0
-        
-        for q_index, question in enumerate(day_questions, 1):
-            success, message = submit_answer(
-                data['participant_id'],
-                data['email'],
-                data['phone'],
-                contest_day,
-                current_slot,
-                q_index,
-                question
-            )
-            
-            if success:
-                success_count += 1
-                correct_answer = question['correct_value']
-                send_log(f"  ✅ Question {q_index}: {correct_answer} - CORRECT", "SUCCESS")
-                
-                # Send notification to user
-                if context:
-                    await send_submission_notification(
-                        context, 
-                        user_id, 
-                        data['name'], 
-                        current_slot_label, 
-                        q_index, 
-                        correct_answer, 
-                        True
-                    )
-            else:
-                send_log(f"  ❌ Question {q_index}: Failed - {message}", "ERROR")
-                
-                # Send failure notification to user
-                if context:
-                    await send_submission_notification(
-                        context, 
-                        user_id, 
-                        data['name'], 
-                        current_slot_label, 
-                        q_index, 
-                        None, 
-                        False
-                    )
-            
-            time.sleep(0.5)
-        
-        send_log(f"Result for {data['name']}: {success_count}/6 correct", "INFO")
-        
-        # Send daily summary to user
-        if context and success_count == 6:
-            summary_msg = f"""
-🏆 *Daily Submission Complete!*
-
-👤 *{data['name']}*
-📅 *Day {contest_day}* | *Slot {current_slot}*
-⏰ *Time:* {current_slot_label}
-
-✅ *All 6 answers submitted correctly!*
-
-Keep up the great work! 🎉
-"""
-            try:
-                await context.bot.send_message(user_id, summary_msg, parse_mode='Markdown')
-            except:
-                pass
-    
-    send_log(f"Submission completed for Slot {current_slot}", "SUCCESS")
-
-def schedule_contest():
-    send_log("SUMMERTASTIC AUTO BOT STARTED", "START")
-    send_log("Contest Duration: 15 days", "INFO")
-    send_log("Active Hours: 10:00 AM - 1:00 PM IST", "INFO")
-    send_log("Active Days: Monday to Friday ONLY", "INFO")
-    send_log("Weekends (Saturday & Sunday): Bot will be idle", "INFO")
-    send_log("Users will receive notifications for every correct answer", "INFO")
-    
-    schedule.every().day.at("10:00").do(lambda: run_contest_submission_sync(None))
-    schedule.every().day.at("10:30").do(lambda: run_contest_submission_sync(None))
-    schedule.every().day.at("11:00").do(lambda: run_contest_submission_sync(None))
-    schedule.every().day.at("11:30").do(lambda: run_contest_submission_sync(None))
-    schedule.every().day.at("12:00").do(lambda: run_contest_submission_sync(None))
-    schedule.every().day.at("12:30").do(lambda: run_contest_submission_sync(None))
-    
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
-
 # Admin Commands
 async def pending_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
@@ -1010,12 +1021,15 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(help_text, parse_mode='Markdown')
 
 def main():
+    global bot_app
+    
     # Start schedule in background thread
     schedule_thread = threading.Thread(target=schedule_contest, daemon=True)
     schedule_thread.start()
     
     # Create bot application
     app = Application.builder().token(BOT_TOKEN).build()
+    bot_app = app
     
     # Conversation handler for registration
     conv_handler = ConversationHandler(
