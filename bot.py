@@ -379,13 +379,19 @@ def submit_all_questions_for_user_sync(user_id, data, contest_day, slot_index, s
 
     # Send summary (fire-and-forget)
     if bot_app:
+        mode_label = "IMMEDIATE" if is_immediate else "AUTO"
+        footer_text = (
+            "\U0001f389 You registered during this active slot! Answers submitted immediately."
+            if is_immediate else
+            "Bot will continue submitting for future slots."
+        )
         summary_msg = (
-            f"\U0001f3c6 *{'IMMEDIATE' if is_immediate else 'AUTO'} SUBMISSION COMPLETE!*\n\n"
+            f"\U0001f3c6 *{mode_label} SUBMISSION COMPLETE!*\n\n"
             f"\U0001f464 *{data['name']}*\n"
             f"\U0001f4c5 *Day {contest_day}* | *Slot {slot_index}*\n"
             f"\u23f0 *Time:* {slot_label}\n\n"
             f"\u2705 *{success_count}/6 answers submitted correctly!*\n\n"
-            f"{'Bot will continue submitting for future slots.' if not is_immediate else '\U0001f389 You registered during this active slot! Answers submitted immediately.'}"
+            f"{footer_text}"
         )
         _run_coroutine_in_main_loop(
             bot_app.bot.send_message(user_id, summary_msg, parse_mode='Markdown')
