@@ -54,138 +54,138 @@ SLOTS = [
 QUESTIONS = [
     # Day 1
     [
-        {"options": ["Tina", "Gopal", "Mira"], "correct": 1},
-        {"options": ["Lucky", "Harry", "Nobita"], "correct": 2},
-        {"options": ["Lucky", "Elsa", "Moana"], "correct": 0},
-        {"options": ["Mickey", "Doraemon", "Goofy"], "correct": 1},
-        {"options": ["Shizuka", "Harry", "Lucky"], "correct": 0},
-        {"options": ["Madhav", "Ariel", "Rapunzel"], "correct": 0},
+        {"options": ["Tina", "Gopal", "Mira"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Lucky", "Harry", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Lucky", "Elsa", "Moana"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Mickey", "Doraemon", "Goofy"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Shizuka", "Harry", "Lucky"], "correct": 0, "correct_value": "Shizuka"},
+        {"options": ["Madhav", "Ariel", "Rapunzel"], "correct": 0, "correct_value": "Madhav"},
     ],
     # Day 2
     [
-        {"options": ["Shinchan", "Doraemon", "Gian"], "correct": 2},
-        {"options": ["Pappu", "Nobita", "Titu"], "correct": 1},
-        {"options": ["Tiana", "Diana", "Lucky"], "correct": 2},
-        {"options": ["Doraemon", "Harry", "Mickey"], "correct": 0},
-        {"options": ["Madhav", "Goofy", "Pluto"], "correct": 0},
-        {"options": ["Cinderella", "Gopal", "Ariel"], "correct": 1},
+        {"options": ["Shinchan", "Doraemon", "Gian"], "correct": 2, "correct_value": "Gian"},
+        {"options": ["Pappu", "Nobita", "Titu"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Tiana", "Diana", "Lucky"], "correct": 2, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Harry", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Goofy", "Pluto"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Cinderella", "Gopal", "Ariel"], "correct": 1, "correct_value": "Gopal"},
     ],
     # Day 3
     [
-        {"options": ["Madhav", "Cinderella", "Tiana"], "correct": 0},
-        {"options": ["Doraemon", "Shizuka", "Harry"], "correct": 1},
-        {"options": ["Mili", "Gopal", "Myra"], "correct": 1},
-        {"options": ["Mickey", "Donald", "Nobita"], "correct": 2},
-        {"options": ["Doraemon", "Nobita", "Shizuka"], "correct": 0},
-        {"options": ["Tina", "Lucky", "Pinky"], "correct": 1},
+        {"options": ["Madhav", "Cinderella", "Tiana"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Doraemon", "Shizuka", "Harry"], "correct": 1, "correct_value": "Shizuka"},
+        {"options": ["Mili", "Gopal", "Myra"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Mickey", "Donald", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Doraemon", "Nobita", "Shizuka"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Tina", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
     ],
     # Day 4
     [
-        {"options": ["Lucky", "Elsa", "Anna"], "correct": 0},
-        {"options": ["Harry", "Doraemon", "Mickey"], "correct": 1},
-        {"options": ["Madhav", "Daisy", "Donald"], "correct": 0},
-        {"options": ["Mickey", "Minnie", "Shizuka"], "correct": 2},
-        {"options": ["Ariel", "Mulan", "Gopal"], "correct": 2},
-        {"options": ["Nobita", "Goofy", "Pinky"], "correct": 0},
+        {"options": ["Lucky", "Elsa", "Anna"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Harry", "Doraemon", "Mickey"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Daisy", "Donald"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Mickey", "Minnie", "Shizuka"], "correct": 2, "correct_value": "Shizuka"},
+        {"options": ["Ariel", "Mulan", "Gopal"], "correct": 2, "correct_value": "Gopal"},
+        {"options": ["Nobita", "Goofy", "Pinky"], "correct": 0, "correct_value": "Nobita"},
     ],
     # Day 5
     [
-        {"options": ["Doraemon", "Mickey", "Donald"], "correct": 0},
-        {"options": ["Gian", "Pluto", "Ariel"], "correct": 0},
-        {"options": ["Radha", "Mili", "Madhav"], "correct": 2},
-        {"options": ["Elsa", "Lucky", "Pinky"], "correct": 1},
-        {"options": ["Pappu", "Nobita", "Pluto"], "correct": 1},
-        {"options": ["Gopal", "Diana", "Daisy"], "correct": 0},
+        {"options": ["Doraemon", "Mickey", "Donald"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Gian", "Pluto", "Ariel"], "correct": 0, "correct_value": "Gian"},
+        {"options": ["Radha", "Mili", "Madhav"], "correct": 2, "correct_value": "Madhav"},
+        {"options": ["Elsa", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Pappu", "Nobita", "Pluto"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Gopal", "Diana", "Daisy"], "correct": 0, "correct_value": "Gopal"},
     ],
     # Day 6
     [
-        {"options": ["Gopal", "Mili", "Minnie"], "correct": 0},
-        {"options": ["Shizuka", "Lucky", "Elsa"], "correct": 1},
-        {"options": ["Ariel", "Gian", "Shinchan"], "correct": 1},
-        {"options": ["Madhav", "Dorami", "Doraemon"], "correct": 0},
-        {"options": ["Harry", "Mickey", "Doraemon"], "correct": 2},
-        {"options": ["Pluto", "Nobita", "Goofy"], "correct": 1},
+        {"options": ["Gopal", "Mili", "Minnie"], "correct": 0, "correct_value": "Gopal"},
+        {"options": ["Shizuka", "Lucky", "Elsa"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Ariel", "Gian", "Shinchan"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Madhav", "Dorami", "Doraemon"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Harry", "Mickey", "Doraemon"], "correct": 2, "correct_value": "Doraemon"},
+        {"options": ["Pluto", "Nobita", "Goofy"], "correct": 1, "correct_value": "Nobita"},
     ],
     # Day 7
     [
-        {"options": ["Ariel", "Lucky", "Moana"], "correct": 1},
-        {"options": ["Doraemon", "Donald", "Mickey"], "correct": 0},
-        {"options": ["Doraemon", "Dorami", "Nobita"], "correct": 2},
-        {"options": ["Pinky", "Gian", "Hemawari"], "correct": 1},
-        {"options": ["Doraemon", "Madhav", "Pluto"], "correct": 1},
-        {"options": ["Gopal", "Daisy", "Donald"], "correct": 0},
+        {"options": ["Ariel", "Lucky", "Moana"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Donald", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Doraemon", "Dorami", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Pinky", "Gian", "Hemawari"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Doraemon", "Madhav", "Pluto"], "correct": 1, "correct_value": "Madhav"},
+        {"options": ["Gopal", "Daisy", "Donald"], "correct": 0, "correct_value": "Gopal"},
     ],
     # Day 8
     [
-        {"options": ["Tina", "Gopal", "Mira"], "correct": 1},
-        {"options": ["Lucky", "Harry", "Nobita"], "correct": 2},
-        {"options": ["Lucky", "Elsa", "Moana"], "correct": 0},
-        {"options": ["Mickey", "Doraemon", "Goofy"], "correct": 1},
-        {"options": ["Shizuka", "Harry", "Lucky"], "correct": 0},
-        {"options": ["Madhav", "Ariel", "Rapunzel"], "correct": 0},
+        {"options": ["Tina", "Gopal", "Mira"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Lucky", "Harry", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Lucky", "Elsa", "Moana"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Mickey", "Doraemon", "Goofy"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Shizuka", "Harry", "Lucky"], "correct": 0, "correct_value": "Shizuka"},
+        {"options": ["Madhav", "Ariel", "Rapunzel"], "correct": 0, "correct_value": "Madhav"},
     ],
     # Day 9
     [
-        {"options": ["Madhav", "Cinderella", "Tiana"], "correct": 0},
-        {"options": ["Doraemon", "Shizuka", "Harry"], "correct": 1},
-        {"options": ["Mili", "Gopal", "Myra"], "correct": 1},
-        {"options": ["Mickey", "Donald", "Nobita"], "correct": 2},
-        {"options": ["Doraemon", "Nobita", "Shizuka"], "correct": 0},
-        {"options": ["Tina", "Lucky", "Pinky"], "correct": 1},
+        {"options": ["Madhav", "Cinderella", "Tiana"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Doraemon", "Shizuka", "Harry"], "correct": 1, "correct_value": "Shizuka"},
+        {"options": ["Mili", "Gopal", "Myra"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Mickey", "Donald", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Doraemon", "Nobita", "Shizuka"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Tina", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
     ],
     # Day 10
     [
-        {"options": ["Lucky", "Elsa", "Anna"], "correct": 0},
-        {"options": ["Harry", "Doraemon", "Mickey"], "correct": 1},
-        {"options": ["Madhav", "Daisy", "Donald"], "correct": 0},
-        {"options": ["Mickey", "Minnie", "Shizuka"], "correct": 2},
-        {"options": ["Ariel", "Mulan", "Gopal"], "correct": 2},
-        {"options": ["Nobita", "Goofy", "Pinky"], "correct": 0},
+        {"options": ["Lucky", "Elsa", "Anna"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Harry", "Doraemon", "Mickey"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Daisy", "Donald"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Mickey", "Minnie", "Shizuka"], "correct": 2, "correct_value": "Shizuka"},
+        {"options": ["Ariel", "Mulan", "Gopal"], "correct": 2, "correct_value": "Gopal"},
+        {"options": ["Nobita", "Goofy", "Pinky"], "correct": 0, "correct_value": "Nobita"},
     ],
     # Day 11
     [
-        {"options": ["Shinchan", "Doraemon", "Gian"], "correct": 2},
-        {"options": ["Pappu", "Nobita", "Titu"], "correct": 1},
-        {"options": ["Tiana", "Diana", "Lucky"], "correct": 2},
-        {"options": ["Doraemon", "Harry", "Mickey"], "correct": 0},
-        {"options": ["Madhav", "Goofy", "Pluto"], "correct": 0},
-        {"options": ["Cinderella", "Gopal", "Ariel"], "correct": 1},
+        {"options": ["Shinchan", "Doraemon", "Gian"], "correct": 2, "correct_value": "Gian"},
+        {"options": ["Pappu", "Nobita", "Titu"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Tiana", "Diana", "Lucky"], "correct": 2, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Harry", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Goofy", "Pluto"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Cinderella", "Gopal", "Ariel"], "correct": 1, "correct_value": "Gopal"},
     ],
     # Day 12
     [
-        {"options": ["Doraemon", "Mickey", "Donald"], "correct": 0},
-        {"options": ["Gian", "Pluto", "Ariel"], "correct": 0},
-        {"options": ["Radha", "Mili", "Madhav"], "correct": 2},
-        {"options": ["Elsa", "Lucky", "Pinky"], "correct": 1},
-        {"options": ["Pappu", "Nobita", "Pluto"], "correct": 1},
-        {"options": ["Gopal", "Diana", "Daisy"], "correct": 0},
+        {"options": ["Doraemon", "Mickey", "Donald"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Gian", "Pluto", "Ariel"], "correct": 0, "correct_value": "Gian"},
+        {"options": ["Radha", "Mili", "Madhav"], "correct": 2, "correct_value": "Madhav"},
+        {"options": ["Elsa", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Pappu", "Nobita", "Pluto"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Gopal", "Diana", "Daisy"], "correct": 0, "correct_value": "Gopal"},
     ],
     # Day 13
     [
-        {"options": ["Gopal", "Mili", "Minnie"], "correct": 0},
-        {"options": ["Shizuka", "Lucky", "Elsa"], "correct": 1},
-        {"options": ["Ariel", "Gian", "Shinchan"], "correct": 1},
-        {"options": ["Madhav", "Dorami", "Doraemon"], "correct": 0},
-        {"options": ["Harry", "Mickey", "Doraemon"], "correct": 2},
-        {"options": ["Pluto", "Nobita", "Goofy"], "correct": 1},
+        {"options": ["Gopal", "Mili", "Minnie"], "correct": 0, "correct_value": "Gopal"},
+        {"options": ["Shizuka", "Lucky", "Elsa"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Ariel", "Gian", "Shinchan"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Madhav", "Dorami", "Doraemon"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Harry", "Mickey", "Doraemon"], "correct": 2, "correct_value": "Doraemon"},
+        {"options": ["Pluto", "Nobita", "Goofy"], "correct": 1, "correct_value": "Nobita"},
     ],
     # Day 14
     [
-        {"options": ["Ariel", "Lucky", "Moana"], "correct": 1},
-        {"options": ["Doraemon", "Donald", "Mickey"], "correct": 0},
-        {"options": ["Doraemon", "Dorami", "Nobita"], "correct": 2},
-        {"options": ["Pinky", "Gian", "Hemawari"], "correct": 1},
-        {"options": ["Doraemon", "Madhav", "Pluto"], "correct": 1},
-        {"options": ["Gopal", "Daisy", "Donald"], "correct": 0},
+        {"options": ["Ariel", "Lucky", "Moana"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Donald", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Doraemon", "Dorami", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Pinky", "Gian", "Hemawari"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Doraemon", "Madhav", "Pluto"], "correct": 1, "correct_value": "Madhav"},
+        {"options": ["Gopal", "Daisy", "Donald"], "correct": 0, "correct_value": "Gopal"},
     ],
     # Day 15
     [
-        {"options": ["Madhav", "Daisy", "Diana"], "correct": 0},
-        {"options": ["Mili", "Gopal", "Ariel"], "correct": 1},
-        {"options": ["Doraemon", "Pluto", "Goofy"], "correct": 0},
-        {"options": ["Lucky", "Elsa", "Cinderella"], "correct": 0},
-        {"options": ["Pinky", "Elsa", "Gian"], "correct": 2},
-        {"options": ["Mickey", "Nobita", "Minnie"], "correct": 1},
+        {"options": ["Madhav", "Daisy", "Diana"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Mili", "Gopal", "Ariel"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Doraemon", "Pluto", "Goofy"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Lucky", "Elsa", "Cinderella"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Pinky", "Elsa", "Gian"], "correct": 2, "correct_value": "Gian"},
+        {"options": ["Mickey", "Nobita", "Minnie"], "correct": 1, "correct_value": "Nobita"},
     ],
 ]
 
@@ -195,14 +195,32 @@ approved_users = {}
 participants = {}
 user_temp_data = {}
 
+# Track submissions for notifications
+submission_tracker = {}
+
 def send_log(message, level="INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] [{level}] {message}")
 
+def is_weekday():
+    """Check if today is Monday to Friday (0=Monday, 4=Friday, 5=Saturday, 6=Sunday)"""
+    return datetime.now().weekday() < 5
+
+async def send_log_to_group(context, message, level="INFO"):
+    """Send log to the configured group"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        if context:
+            await context.bot.send_message(
+                GROUP_ID,
+                f"[{level}] {timestamp}\n{message}"
+            )
+    except Exception as e:
+        print(f"Failed to send log to group: {e}")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
-    # CHECK IF USER IS ADMIN - Show admin panel
     if user_id == ADMIN_ID:
         await update.message.reply_text(
             "👑 *Admin Panel*\n\n"
@@ -214,24 +232,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/broadcast <message> - Broadcast message\n"
             "/stats - Show statistics\n"
             "/logs - Show recent logs\n\n"
-            "💡 *To register yourself for contest:*\n"
-            "Use /register command to start registration",
+            "💡 *To register yourself:*\n"
+            "Use /register command",
             parse_mode='Markdown'
         )
         return ConversationHandler.END
     
-    # CHECK IF USER IS ALREADY APPROVED - Start registration
     elif user_id in approved_users:
         await update.message.reply_text(
             "🎉 *Welcome to Summertastic Contest Bot!*\n\n"
-            "Let's register you for the contest. Please enter your details:\n\n"
-            "📝 *Step 1/4:* What is your *full name*?\n\n"
-            "Example: Rajesh Sharma",
+            "Use /register to start your registration.",
             parse_mode='Markdown'
         )
-        return NAME
+        return ConversationHandler.END
     
-    # CHECK IF USER IS PENDING
     elif user_id in pending_users:
         await update.message.reply_text(
             "⏳ *Pending Approval*\n\n"
@@ -241,7 +255,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return ConversationHandler.END
     
-    # NEW USER - Request access
     else:
         keyboard = [[InlineKeyboardButton("📝 Request Access", callback_data='request_access')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -254,11 +267,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return ConversationHandler.END
 
-# Separate command for admin to register themselves
 async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
-    # Allow admin to register too
     if user_id == ADMIN_ID or user_id in approved_users:
         await update.message.reply_text(
             "📝 *Start Registration*\n\n"
@@ -380,7 +391,7 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
     if answer != 'YES':
         await update.message.reply_text(
             "❌ *Registration Cancelled*\n\n"
-            "Use /start to begin again.",
+            "Use /register to begin again.",
             parse_mode='Markdown'
         )
         if user_id in user_temp_data:
@@ -435,11 +446,14 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 • Bot will auto-submit correct answers
 • Every 30 minutes from 10:00 AM - 1:00 PM IST
+• Monday to Friday only
 • Duration: 15 days
 • 6 questions per slot
 • 100% correct answers guaranteed
 
 ✅ You're all set! No manual work needed.
+
+You will receive notifications for every correct answer submission.
 
 Use /status to check your registration.
 """
@@ -493,7 +507,7 @@ async def cancel_registration(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     await update.message.reply_text(
         "❌ *Registration Cancelled*\n\n"
-        "Use /start to begin again.",
+        "Use /register to begin again.",
         parse_mode='Markdown'
     )
     return ConversationHandler.END
@@ -508,7 +522,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if query.data == 'request_access':
         if user_id in approved_users:
-            await query.edit_message_text("✅ You already have access!\nUse /start to register.")
+            await query.edit_message_text("✅ You already have access!\nUse /register to register.")
         elif user_id in pending_users:
             await query.edit_message_text("⏳ Your request is already pending.")
         else:
@@ -537,7 +551,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(
                 "✅ *Request Sent!*\n\n"
                 "You will be notified once approved.\n"
-                "Use /start again after approval to register.",
+                "Use /register after approval to register.",
                 parse_mode='Markdown'
             )
     
@@ -555,7 +569,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 target_user,
                 "✅ *Access Granted!*\n\n"
-                "Welcome! Please use /start to register for the contest.",
+                "Welcome! Please use /register to register for the contest.",
                 parse_mode='Markdown'
             )
             
@@ -585,7 +599,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def submit_answer(participant_id, email, phone, contest_day, slot_index, question_index, question_data):
     slot = SLOTS[slot_index - 1]
     correct_index = question_data['correct']
-    correct_value = question_data['options'][correct_index]
+    correct_value = question_data['correct_value']
     
     options = question_data['options']
     options_prompt = f"A: {options[0]} | B: {options[1]} | C: {options[2]}"
@@ -611,13 +625,56 @@ def submit_answer(participant_id, email, phone, contest_day, slot_index, questio
     
     try:
         response = requests.post(SUBMIT_API, json=payload, headers=HEADERS, timeout=30)
-        return response.status_code == 200, response.text
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok') == True:
+                return True, "Correct answer submitted successfully!"
+            else:
+                return True, "Submitted but response missing 'ok': true"
+        return False, f"HTTP Error: {response.status_code}"
     except Exception as e:
         return False, str(e)
 
-def run_contest_submission_sync():
+async def send_submission_notification(context, user_id, name, slot_label, question_num, correct_answer, status):
+    """Send notification to user about submission"""
+    if status:
+        message = f"""
+✅ *Answer Correct!*
+
+👤 *Participant:* {name}
+⏰ *Slot:* {slot_label}
+❓ *Question {question_num}*
+🎯 *Your Answer:* {correct_answer} ✓
+
+✨ Your correct answer has been recorded!
+"""
+    else:
+        message = f"""
+❌ *Submission Failed*
+
+👤 *Participant:* {name}
+⏰ *Slot:* {slot_label}
+❓ *Question {question_num}*
+
+⚠️ Failed to submit answer. Please contact admin.
+"""
+    
+    try:
+        await context.bot.send_message(user_id, message, parse_mode='Markdown')
+    except Exception as e:
+        send_log(f"Failed to notify user {user_id}: {e}", "ERROR")
+
+def run_contest_submission_sync(context=None):
+    """AUTOMATIC SUBMISSION - Runs every 30 minutes, Monday to Friday only"""
     now = datetime.now()
     
+    # Check if it's weekday (Monday to Friday)
+    if not is_weekday():
+        weekday_name = now.strftime("%A")
+        send_log(f"Skipped: {weekday_name} - Bot only runs Monday to Friday", "INFO")
+        return
+    
+    # Only run between 10 AM and 1 PM
     if now.hour < 10 or now.hour >= 13:
         return
     
@@ -629,15 +686,17 @@ def run_contest_submission_sync():
     
     current_time = now.strftime("%H:%M")
     current_slot = None
+    current_slot_label = None
     
     for slot in SLOTS:
         if current_time >= slot['time']:
             current_slot = slot['slot']
+            current_slot_label = slot['label']
     
     if not current_slot or current_slot > 6:
         return
     
-    send_log(f"Auto submission - Day {contest_day}, Slot {current_slot}", "SUBMISSION")
+    send_log(f"Auto submission - Day {contest_day}, Slot {current_slot} ({current_slot_label})", "SUBMISSION")
     send_log(f"Total participants: {len(participants)}", "INFO")
     
     day_questions = QUESTIONS[contest_day - 1]
@@ -647,7 +706,7 @@ def run_contest_submission_sync():
         success_count = 0
         
         for q_index, question in enumerate(day_questions, 1):
-            success, response = submit_answer(
+            success, message = submit_answer(
                 data['participant_id'],
                 data['email'],
                 data['phone'],
@@ -659,10 +718,56 @@ def run_contest_submission_sync():
             
             if success:
                 success_count += 1
+                correct_answer = question['correct_value']
+                send_log(f"  ✅ Question {q_index}: {correct_answer} - CORRECT", "SUCCESS")
+                
+                # Send notification to user
+                if context:
+                    await send_submission_notification(
+                        context, 
+                        user_id, 
+                        data['name'], 
+                        current_slot_label, 
+                        q_index, 
+                        correct_answer, 
+                        True
+                    )
+            else:
+                send_log(f"  ❌ Question {q_index}: Failed - {message}", "ERROR")
+                
+                # Send failure notification to user
+                if context:
+                    await send_submission_notification(
+                        context, 
+                        user_id, 
+                        data['name'], 
+                        current_slot_label, 
+                        q_index, 
+                        None, 
+                        False
+                    )
             
             time.sleep(0.5)
         
-        send_log(f"Result: {success_count}/6 correct", "INFO")
+        send_log(f"Result for {data['name']}: {success_count}/6 correct", "INFO")
+        
+        # Send daily summary to user
+        if context and success_count == 6:
+            summary_msg = f"""
+🏆 *Daily Submission Complete!*
+
+👤 *{data['name']}*
+📅 *Day {contest_day}* | *Slot {current_slot}*
+⏰ *Time:* {current_slot_label}
+
+✅ *All 6 answers submitted correctly!*
+
+Keep up the great work! 🎉
+"""
+            try:
+                await context.bot.send_message(user_id, summary_msg, parse_mode='Markdown')
+            except:
+                pass
     
     send_log(f"Submission completed for Slot {current_slot}", "SUCCESS")
 
@@ -670,13 +775,16 @@ def schedule_contest():
     send_log("SUMMERTASTIC AUTO BOT STARTED", "START")
     send_log("Contest Duration: 15 days", "INFO")
     send_log("Active Hours: 10:00 AM - 1:00 PM IST", "INFO")
+    send_log("Active Days: Monday to Friday ONLY", "INFO")
+    send_log("Weekends (Saturday & Sunday): Bot will be idle", "INFO")
+    send_log("Users will receive notifications for every correct answer", "INFO")
     
-    schedule.every().day.at("10:00").do(run_contest_submission_sync)
-    schedule.every().day.at("10:30").do(run_contest_submission_sync)
-    schedule.every().day.at("11:00").do(run_contest_submission_sync)
-    schedule.every().day.at("11:30").do(run_contest_submission_sync)
-    schedule.every().day.at("12:00").do(run_contest_submission_sync)
-    schedule.every().day.at("12:30").do(run_contest_submission_sync)
+    schedule.every().day.at("10:00").do(lambda: run_contest_submission_sync(None))
+    schedule.every().day.at("10:30").do(lambda: run_contest_submission_sync(None))
+    schedule.every().day.at("11:00").do(lambda: run_contest_submission_sync(None))
+    schedule.every().day.at("11:30").do(lambda: run_contest_submission_sync(None))
+    schedule.every().day.at("12:00").do(lambda: run_contest_submission_sync(None))
+    schedule.every().day.at("12:30").do(lambda: run_contest_submission_sync(None))
     
     while True:
         schedule.run_pending()
@@ -716,7 +824,7 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await context.bot.send_message(
             target_user,
-            "✅ *Access Granted!*\n\nPlease use /start to register for the contest.",
+            "✅ *Access Granted!*\n\nPlease use /register to register for the contest.",
             parse_mode='Markdown'
         )
         
@@ -806,8 +914,11 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ⏳ Pending Requests: {len(pending_users)}
 ✅ Registered for Contest: {len(participants)}
 ⏰ Active Hours: 10:00 AM - 1:00 PM IST
+📅 Active Days: Monday to Friday
+🚫 Weekend: Bot Idle
 🤖 Auto-submit: Active
-✅ Correct Answers: 100%"""
+✅ Correct Answers: 100%
+📢 User Notifications: Enabled"""
     
     await update.message.reply_text(stats_text, parse_mode='Markdown')
 
@@ -820,7 +931,11 @@ async def logs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📋 *Logs Information*\n\n"
         f"Logs are printed in the Railway console.\n"
         f"Group ID for logs: `{GROUP_ID}`\n\n"
-        f"Check Railway deployment logs for detailed submission history.",
+        f"Check Railway deployment logs for detailed submission history.\n\n"
+        f"*Features:*\n"
+        f"• Monday-Friday only\n"
+        f"• User notifications for every correct answer\n"
+        f"• Response: {{'ok': true}} for successful submissions",
         parse_mode='Markdown'
     )
 
@@ -836,6 +951,9 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"📧 Email: {data['email']}\n"
             f"📱 Phone: {data['phone']}\n"
             f"🤖 Auto-submit: Enabled\n"
+            f"📅 Active Days: Monday to Friday\n"
+            f"⏰ Active Hours: 10:00 AM - 1:00 PM IST\n"
+            f"✅ Notifications: You will receive alerts for every correct answer\n"
             f"✅ Status: Active",
             parse_mode='Markdown'
         )
@@ -851,17 +969,20 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 *How to Register:*
 1. Get approved by admin first
-2. Then use `/register` command
-3. Enter your full name
-4. Enter your email address
-5. Enter your city
-6. Enter your phone number
-7. Confirm your details
+2. Use `/register` command
+3. Enter your details step by step
+4. Get your Participant ID automatically
+
+*Schedule:*
+• Monday to Friday ONLY
+• 10:00 AM - 1:00 PM IST
+• Submissions every 30 minutes
+• Weekends: Bot is idle
 
 *User Commands:*
 /start - Main menu
 /register - Start registration
-/status - Check status
+/status - Check your status
 /help - Show this help
 
 *Admin Commands:*
@@ -873,12 +994,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /stats - View statistics
 /logs - View logs
 
+*Notifications:*
+• You will receive a message for EVERY correct answer
+• Daily summary after each slot
+• Instant confirmation of submission
+
 *Bot Features:*
-- Auto-submits correct answers every 30 min
-- Active hours: 10:00 AM - 1:00 PM IST
-- Duration: 15 days
-- 6 questions per slot
-- 100% correct answers"""
+- Auto-submits 100% correct answers
+- Monday to Friday only
+- User notifications for each submission
+- Response: {"ok":true} for successful submissions
+- 15 days contest duration
+- 6 questions per slot"""
     
     await update.message.reply_text(help_text, parse_mode='Markdown')
 
@@ -919,6 +1046,8 @@ def main():
     
     print("🤖 Bot started! Waiting for messages...")
     print(f"👑 Admin ID: {ADMIN_ID}")
+    print(f"📅 Schedule: Monday to Friday only (10:00 AM - 1:00 PM IST)")
+    print(f"✅ User notifications: ENABLED for every correct answer")
     
     # Start polling
     app.run_polling()
