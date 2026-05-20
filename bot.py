@@ -183,6 +183,9 @@ approved_users = {}
 participants = {}
 submission_logs = []
 
+# Global bot instance for background tasks
+bot_app = None
+
 async def send_log(context, message, level="INFO"):
     """Send log to group and store in memory"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -210,35 +213,31 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     username = update.effective_user.username or "No username"
     
-    await send_log(context, f"User {username} ({user_id}) started the bot", "INFO")
-    
     if user_id == ADMIN_ID:
         await update.message.reply_text(
             "👑 *Admin Panel*\n\n"
-            "You have full access to the bot.\n\n"
             "*Admin Commands:*\n"
             "/pending - Show pending users\n"
             "/approve <user_id> - Approve a user\n"
             "/reject <user_id> - Reject a user\n"
-            "/users - List all approved users\n"
-            "/broadcast <message> - Send message to all users\n"
-            "/stats - Show bot statistics\n"
+            "/users - List approved users\n"
+            "/broadcast <message> - Broadcast message\n"
+            "/stats - Show statistics\n"
             "/logs - Show recent logs",
             parse_mode='Markdown'
         )
     elif user_id in approved_users:
         await update.message.reply_text(
             "✅ *Welcome Back!*\n\n"
-            "You are already approved. Use these commands:\n"
             "/register - Register for contest\n"
-            "/status - Check your status\n"
+            "/status - Check status\n"
             "/help - Show help",
             parse_mode='Markdown'
         )
     elif user_id in pending_users:
         await update.message.reply_text(
             "⏳ *Pending Approval*\n\n"
-            "Your request has been sent to admin. Please wait for approval.",
+            "Your request has been sent to admin.",
             parse_mode='Markdown'
         )
     else:
@@ -247,8 +246,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await update.message.reply_text(
             "🔒 *Access Restricted*\n\n"
-            "This bot is private. Only approved users can use it.\n\n"
-            "Click the button below to request access.",
+            "Click below to request access from admin.",
             parse_mode='Markdown',
             reply_markup=reply_markup
         )
@@ -265,15 +263,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user_id in approved_users:
             await query.edit_message_text("✅ You already have access!")
         elif user_id in pending_users:
-            await query.edit_message_text("⏳ Your request is already pending.")
+            await query.edit_message_text("⏳ Request already pending.")
         else:
             pending_users[user_id] = {
                 'username': username,
                 'name': first_name,
                 'requested_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-            
-            await send_log(context, f"Access request from {first_name} (@{username})", "REQUEST")
             
             keyboard = [
                 [InlineKeyboardButton("✅ Approve", callback_data=f'approve_{user_id}'),
@@ -283,8 +279,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             await context.bot.send_message(
                 ADMIN_ID,
-                f"📢 *New Access Request!*\n\n"
-                f"User ID: `{user_id}`\n"
+                f"📢 *New Request!*\n\n"
+                f"ID: `{user_id}`\n"
                 f"Name: {first_name}\n"
                 f"Username: @{username}",
                 parse_mode='Markdown',
@@ -292,14 +288,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             
             await query.edit_message_text(
-                "✅ *Request Sent!*\n\n"
-                "You'll be notified once approved.",
+                "✅ *Request Sent!*\n\nYou'll be notified once approved.",
                 parse_mode='Markdown'
             )
     
     elif query.data.startswith('approve_'):
         if str(query.from_user.id) != ADMIN_ID:
-            await query.answer("Only admin can do this!", show_alert=True)
+            await query.answer("Only admin!", show_alert=True)
             return
         
         target_user = query.data.split('_')[1]
@@ -307,8 +302,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if target_user in pending_users:
             approved_users[target_user] = pending_users[target_user]
             del pending_users[target_user]
-            
-            await send_log(context, f"Admin approved user {target_user}", "APPROVE")
             
             await context.bot.send_message(
                 target_user,
@@ -320,7 +313,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif query.data.startswith('reject_'):
         if str(query.from_user.id) != ADMIN_ID:
-            await query.answer("Only admin can do this!", show_alert=True)
+            await query.answer("Only admin!", show_alert=True)
             return
         
         target_user = query.data.split('_')[1]
@@ -328,11 +321,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if target_user in pending_users:
             del pending_users[target_user]
             
-            await send_log(context, f"Admin rejected user {target_user}", "REJECT")
-            
             await context.bot.send_message(
                 target_user,
-                "❌ *Access Denied*\n\nYour request was rejected.",
+                "❌ *Access Denied*",
                 parse_mode='Markdown'
             )
             
@@ -342,7 +333,7 @@ async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if user_id not in approved_users and user_id != ADMIN_ID:
-        await update.message.reply_text("❌ You don't have access.")
+        await update.message.reply_text("❌ No access. Use /start")
         return
     
     if len(context.args) < 4:
@@ -365,8 +356,6 @@ async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'phone': phone,
         'registered_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
-    
-    await send_log(context, f"User {name} ({user_id}) registered with ID: {participant_id}", "REGISTER")
     
     await update.message.reply_text(
         f"✅ *Registration Successful!*\n\n"
@@ -410,8 +399,8 @@ def submit_answer(participant_id, email, phone, contest_day, slot_index, questio
     except Exception as e:
         return False, str(e)
 
-async def run_contest_submission(context: ContextTypes.DEFAULT_TYPE = None):
-    """Submit answers for current day and slot"""
+def run_contest_submission_sync():
+    """Synchronous version for background thread"""
     now = datetime.now()
     
     if now.hour < 10 or now.hour >= 13:
@@ -433,11 +422,7 @@ async def run_contest_submission(context: ContextTypes.DEFAULT_TYPE = None):
     if not current_slot or current_slot > 6:
         return
     
-    log_msg = f"🤖 Starting submission - Day {contest_day}, Slot {current_slot}"
-    print(log_msg)
-    
-    if context:
-        await send_log(context, log_msg, "SUBMISSION")
+    print(f"[{now}] Submitting Day {contest_day}, Slot {current_slot}")
     
     day_questions = QUESTIONS[contest_day - 1]
     
@@ -459,24 +444,25 @@ async def run_contest_submission(context: ContextTypes.DEFAULT_TYPE = None):
             
             time.sleep(0.5)
         
-        if success_count == 6 and context:
-            await send_log(context, f"✅ {data['name']} - All 6 answers correct!", "SUCCESS")
+        print(f"{data['name']}: {success_count}/6 correct")
 
 def schedule_contest():
     """Schedule submissions every 30 minutes"""
-    schedule.every().day.at("10:00").do(lambda: asyncio.run(run_contest_submission(None)))
-    schedule.every().day.at("10:30").do(lambda: asyncio.run(run_contest_submission(None)))
-    schedule.every().day.at("11:00").do(lambda: asyncio.run(run_contest_submission(None)))
-    schedule.every().day.at("11:30").do(lambda: asyncio.run(run_contest_submission(None)))
-    schedule.every().day.at("12:00").do(lambda: asyncio.run(run_contest_submission(None)))
-    schedule.every().day.at("12:30").do(lambda: asyncio.run(run_contest_submission(None)))
+    schedule.every().day.at("10:00").do(run_contest_submission_sync)
+    schedule.every().day.at("10:30").do(run_contest_submission_sync)
+    schedule.every().day.at("11:00").do(run_contest_submission_sync)
+    schedule.every().day.at("11:30").do(run_contest_submission_sync)
+    schedule.every().day.at("12:00").do(run_contest_submission_sync)
+    schedule.every().day.at("12:30").do(run_contest_submission_sync)
+    
+    print("📅 Auto-submission schedule started (10:00-13:00 IST)")
     
     while True:
         schedule.run_pending()
         time.sleep(60)
 
 # Admin Commands
-async def pending_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def pending_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
         await update.message.reply_text("❌ Admin only!")
         return
@@ -487,7 +473,7 @@ async def pending_users_command(update: Update, context: ContextTypes.DEFAULT_TY
     
     message = "📋 *Pending Users:*\n\n"
     for uid, data in pending_users.items():
-        message += f"🆔 `{uid}` - {data['name']} (@{data['username']})\n"
+        message += f"🆔 `{uid}` - {data['name']}\n"
     
     await update.message.reply_text(message, parse_mode='Markdown')
 
@@ -506,11 +492,9 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         approved_users[target_user] = pending_users[target_user]
         del pending_users[target_user]
         
-        await send_log(context, f"Admin approved user {target_user}", "APPROVE")
-        
         await context.bot.send_message(
             target_user,
-            "✅ *Access Granted!* Use /start to begin.",
+            "✅ *Access Granted!* Use /start",
             parse_mode='Markdown'
         )
         
@@ -529,8 +513,6 @@ async def reject_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if target_user in pending_users:
         del pending_users[target_user]
-        
-        await send_log(context, f"Admin rejected user {target_user}", "REJECT")
         
         await context.bot.send_message(
             target_user,
@@ -567,8 +549,6 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     message = ' '.join(context.args)
     
-    await send_log(context, f"Broadcast: {message[:50]}", "BROADCAST")
-    
     sent = 0
     for user_id in approved_users:
         try:
@@ -578,7 +558,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
     
-    await update.message.reply_text(f"✅ Broadcast sent to {sent} users!")
+    await update.message.reply_text(f"✅ Sent to {sent} users!")
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
@@ -643,21 +623,23 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='Markdown'
     )
 
-import asyncio
-
-async def main():
-    # Start schedule in background
+def main():
+    global bot_app
+    
+    # Start schedule in background thread
     schedule_thread = threading.Thread(target=schedule_contest, daemon=True)
     schedule_thread.start()
     
-    # Start bot
+    # Create and run bot
     app = Application.builder().token(BOT_TOKEN).build()
+    bot_app = app
     
+    # Add handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("register", register_command))
     app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("pending", pending_users_command))
+    app.add_handler(CommandHandler("pending", pending_command))
     app.add_handler(CommandHandler("approve", approve_command))
     app.add_handler(CommandHandler("reject", reject_command))
     app.add_handler(CommandHandler("users", users_command))
@@ -667,7 +649,9 @@ async def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     
     print("🤖 Bot started on Railway!")
-    await app.run_polling()
+    
+    # Run polling (this is blocking)
+    app.run_polling()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
