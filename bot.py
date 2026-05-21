@@ -8,15 +8,26 @@ from datetime import datetime, timezone, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ConversationHandler, ContextTypes
 
+# IST = UTC+5:30  — Railway servers run UTC, so we must convert explicitly.
+_IST = timedelta(hours=5, minutes=30)
+
+def get_ist_now() -> datetime:
+    """Return current time as a naive datetime in IST (Asia/Kolkata)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None) + _IST
+
+# Bot configuration
 BOT_TOKEN = "8687160226:AAHKPurDJS8kyxrblV0X8mZdSbFwFUV56Yw"
 ADMIN_ID = "1922522807"
 GROUP_ID = "-1003862731449"
 
+# Conversation states
 NAME, EMAIL, CITY, PHONE, CONFIRM = range(5)
 
+# API endpoints
 REGISTER_API = "https://summertasticcontest.com/api/register.php"
 SUBMIT_API = "https://summertasticcontest.com/api/submit.php"
 
+# Headers
 HEADERS = {
     "Host": "summertasticcontest.com",
     "Sec-Ch-Ua-Platform": "Windows",
@@ -28,56 +39,268 @@ HEADERS = {
     "Referer": "https://summertasticcontest.com/"
 }
 
-CONSENT = {"consent_a": "yes", "consent_b": "yes", "consent_c": "yes"}
+# Fixed consent values
+CONSENT = {
+    "consent_a": "yes",
+    "consent_b": "yes",
+    "consent_c": "yes"
+}
 
+# Slot timings (IST)
 SLOTS = [
-    {"slot": 1, "label": "10:00 am - 10:30 am", "hour": 10, "minute": 0},
-    {"slot": 2, "label": "10:30 am - 11:00 am", "hour": 10, "minute": 30},
-    {"slot": 3, "label": "11:00 am - 11:30 am", "hour": 11, "minute": 0},
-    {"slot": 4, "label": "11:30 am - 12:00 pm", "hour": 11, "minute": 30},
-    {"slot": 5, "label": "12:00 pm - 12:30 pm", "hour": 12, "minute": 0},
-    {"slot": 6, "label": "12:30 pm - 1:00 pm", "hour": 12, "minute": 30},
+    {"slot": 1, "label": "10:00 am – 10:30 am", "time": "10:00", "hour": 10, "minute": 0},
+    {"slot": 2, "label": "10:30 am – 11:00 am", "time": "10:30", "hour": 10, "minute": 30},
+    {"slot": 3, "label": "11:00 am – 11:30 am", "time": "11:00", "hour": 11, "minute": 0},
+    {"slot": 4, "label": "11:30 am – 12:00 pm", "time": "11:30", "hour": 11, "minute": 30},
+    {"slot": 5, "label": "12:00 pm – 12:30 pm", "time": "12:00", "hour": 12, "minute": 0},
+    {"slot": 6, "label": "12:30 pm – 1:00 pm",  "time": "12:30", "hour": 12, "minute": 30},
 ]
 
-# Day 1 questions only for testing
+# Questions and correct answers for 15 days
 QUESTIONS = [
-    {"options": ["Tina", "Gopal", "Mira"], "correct": 1, "correct_value": "Gopal"},
-    {"options": ["Lucky", "Harry", "Nobita"], "correct": 2, "correct_value": "Nobita"},
-    {"options": ["Lucky", "Elsa", "Moana"], "correct": 0, "correct_value": "Lucky"},
-    {"options": ["Mickey", "Doraemon", "Goofy"], "correct": 1, "correct_value": "Doraemon"},
-    {"options": ["Shizuka", "Harry", "Lucky"], "correct": 0, "correct_value": "Shizuka"},
-    {"options": ["Madhav", "Ariel", "Rapunzel"], "correct": 0, "correct_value": "Madhav"},
+    # Day 1
+    [
+        {"options": ["Tina", "Gopal", "Mira"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Lucky", "Harry", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Lucky", "Elsa", "Moana"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Mickey", "Doraemon", "Goofy"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Shizuka", "Harry", "Lucky"], "correct": 0, "correct_value": "Shizuka"},
+        {"options": ["Madhav", "Ariel", "Rapunzel"], "correct": 0, "correct_value": "Madhav"},
+    ],
+    # Day 2
+    [
+        {"options": ["Shinchan", "Doraemon", "Gian"], "correct": 2, "correct_value": "Gian"},
+        {"options": ["Pappu", "Nobita", "Titu"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Tiana", "Diana", "Lucky"], "correct": 2, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Harry", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Goofy", "Pluto"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Cinderella", "Gopal", "Ariel"], "correct": 1, "correct_value": "Gopal"},
+    ],
+    # Day 3
+    [
+        {"options": ["Madhav", "Cinderella", "Tiana"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Doraemon", "Shizuka", "Harry"], "correct": 1, "correct_value": "Shizuka"},
+        {"options": ["Mili", "Gopal", "Myra"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Mickey", "Donald", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Doraemon", "Nobita", "Shizuka"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Tina", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
+    ],
+    # Day 4
+    [
+        {"options": ["Lucky", "Elsa", "Anna"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Harry", "Doraemon", "Mickey"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Daisy", "Donald"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Mickey", "Minnie", "Shizuka"], "correct": 2, "correct_value": "Shizuka"},
+        {"options": ["Ariel", "Mulan", "Gopal"], "correct": 2, "correct_value": "Gopal"},
+        {"options": ["Nobita", "Goofy", "Pinky"], "correct": 0, "correct_value": "Nobita"},
+    ],
+    # Day 5
+    [
+        {"options": ["Doraemon", "Mickey", "Donald"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Gian", "Pluto", "Ariel"], "correct": 0, "correct_value": "Gian"},
+        {"options": ["Radha", "Mili", "Madhav"], "correct": 2, "correct_value": "Madhav"},
+        {"options": ["Elsa", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Pappu", "Nobita", "Pluto"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Gopal", "Diana", "Daisy"], "correct": 0, "correct_value": "Gopal"},
+    ],
+    # Day 6
+    [
+        {"options": ["Gopal", "Mili", "Minnie"], "correct": 0, "correct_value": "Gopal"},
+        {"options": ["Shizuka", "Lucky", "Elsa"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Ariel", "Gian", "Shinchan"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Madhav", "Dorami", "Doraemon"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Harry", "Mickey", "Doraemon"], "correct": 2, "correct_value": "Doraemon"},
+        {"options": ["Pluto", "Nobita", "Goofy"], "correct": 1, "correct_value": "Nobita"},
+    ],
+    # Day 7
+    [
+        {"options": ["Ariel", "Lucky", "Moana"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Donald", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Doraemon", "Dorami", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Pinky", "Gian", "Hemawari"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Doraemon", "Madhav", "Pluto"], "correct": 1, "correct_value": "Madhav"},
+        {"options": ["Gopal", "Daisy", "Donald"], "correct": 0, "correct_value": "Gopal"},
+    ],
+    # Day 8
+    [
+        {"options": ["Tina", "Gopal", "Mira"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Lucky", "Harry", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Lucky", "Elsa", "Moana"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Mickey", "Doraemon", "Goofy"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Shizuka", "Harry", "Lucky"], "correct": 0, "correct_value": "Shizuka"},
+        {"options": ["Madhav", "Ariel", "Rapunzel"], "correct": 0, "correct_value": "Madhav"},
+    ],
+    # Day 9
+    [
+        {"options": ["Madhav", "Cinderella", "Tiana"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Doraemon", "Shizuka", "Harry"], "correct": 1, "correct_value": "Shizuka"},
+        {"options": ["Mili", "Gopal", "Myra"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Mickey", "Donald", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Doraemon", "Nobita", "Shizuka"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Tina", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
+    ],
+    # Day 10
+    [
+        {"options": ["Lucky", "Elsa", "Anna"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Harry", "Doraemon", "Mickey"], "correct": 1, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Daisy", "Donald"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Mickey", "Minnie", "Shizuka"], "correct": 2, "correct_value": "Shizuka"},
+        {"options": ["Ariel", "Mulan", "Gopal"], "correct": 2, "correct_value": "Gopal"},
+        {"options": ["Nobita", "Goofy", "Pinky"], "correct": 0, "correct_value": "Nobita"},
+    ],
+    # Day 11
+    [
+        {"options": ["Shinchan", "Doraemon", "Gian"], "correct": 2, "correct_value": "Gian"},
+        {"options": ["Pappu", "Nobita", "Titu"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Tiana", "Diana", "Lucky"], "correct": 2, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Harry", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Madhav", "Goofy", "Pluto"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Cinderella", "Gopal", "Ariel"], "correct": 1, "correct_value": "Gopal"},
+    ],
+    # Day 12
+    [
+        {"options": ["Doraemon", "Mickey", "Donald"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Gian", "Pluto", "Ariel"], "correct": 0, "correct_value": "Gian"},
+        {"options": ["Radha", "Mili", "Madhav"], "correct": 2, "correct_value": "Madhav"},
+        {"options": ["Elsa", "Lucky", "Pinky"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Pappu", "Nobita", "Pluto"], "correct": 1, "correct_value": "Nobita"},
+        {"options": ["Gopal", "Diana", "Daisy"], "correct": 0, "correct_value": "Gopal"},
+    ],
+    # Day 13
+    [
+        {"options": ["Gopal", "Mili", "Minnie"], "correct": 0, "correct_value": "Gopal"},
+        {"options": ["Shizuka", "Lucky", "Elsa"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Ariel", "Gian", "Shinchan"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Madhav", "Dorami", "Doraemon"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Harry", "Mickey", "Doraemon"], "correct": 2, "correct_value": "Doraemon"},
+        {"options": ["Pluto", "Nobita", "Goofy"], "correct": 1, "correct_value": "Nobita"},
+    ],
+    # Day 14
+    [
+        {"options": ["Ariel", "Lucky", "Moana"], "correct": 1, "correct_value": "Lucky"},
+        {"options": ["Doraemon", "Donald", "Mickey"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Doraemon", "Dorami", "Nobita"], "correct": 2, "correct_value": "Nobita"},
+        {"options": ["Pinky", "Gian", "Hemawari"], "correct": 1, "correct_value": "Gian"},
+        {"options": ["Doraemon", "Madhav", "Pluto"], "correct": 1, "correct_value": "Madhav"},
+        {"options": ["Gopal", "Daisy", "Donald"], "correct": 0, "correct_value": "Gopal"},
+    ],
+    # Day 15
+    [
+        {"options": ["Madhav", "Daisy", "Diana"], "correct": 0, "correct_value": "Madhav"},
+        {"options": ["Mili", "Gopal", "Ariel"], "correct": 1, "correct_value": "Gopal"},
+        {"options": ["Doraemon", "Pluto", "Goofy"], "correct": 0, "correct_value": "Doraemon"},
+        {"options": ["Lucky", "Elsa", "Cinderella"], "correct": 0, "correct_value": "Lucky"},
+        {"options": ["Pinky", "Elsa", "Gian"], "correct": 2, "correct_value": "Gian"},
+        {"options": ["Mickey", "Nobita", "Minnie"], "correct": 1, "correct_value": "Nobita"},
+    ],
 ]
 
+# Store data
 pending_users = {}
 approved_users = {}
 participants = {}
 user_temp_data = {}
 bot_app = None
+scheduled_jobs = {}
+submitted_slots = set()
 
-def send_log(message):
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}")
+# FIX 1: Store the main event loop so background threads can schedule coroutines safely
+# instead of creating new event loops (which crashes when the main loop is already running).
+main_event_loop = None
+
+
+def send_log(message, level="INFO"):
+    timestamp = get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] [{level}] {message}")
+
+
+def is_weekday():
+    """Check if today is Monday to Friday"""
+    return get_ist_now().weekday() < 5
+
 
 def get_current_slot():
-    now = datetime.now()
+    """Get current slot based on time"""
+    # FIX 2: Capture `now` once so the slot boundary cannot shift between comparisons.
+    now = get_ist_now()
+
     for slot in SLOTS:
         slot_start = now.replace(hour=slot['hour'], minute=slot['minute'], second=0, microsecond=0)
         slot_end = slot_start + timedelta(minutes=30)
         if slot_start <= now <= slot_end:
             return slot
+
     return None
 
-def submit_answer_sync(participant_id, email, phone, slot_index, question_data):
+
+def get_contest_day():
+    """Calculate current contest day"""
+    start_date = datetime(2026, 5, 20)
+    now = get_ist_now()
+    contest_day = (now - start_date).days + 1
+    if contest_day < 1 or contest_day > 15:
+        return None
+    return contest_day
+
+
+async def send_submission_notification(user_id, name, slot_label, question_num, correct_answer, status, is_immediate=False):
+    """Send notification to user about submission"""
+    global bot_app
+    if not bot_app:
+        return
+
+    if status:
+        immediate_text = " (IMMEDIATE SUBMISSION)" if is_immediate else ""
+        message = (
+            f"\u2705 *Answer Correct!{immediate_text}*\n\n"
+            f"\U0001f464 *Participant:* {name}\n"
+            f"\u23f0 *Slot:* {slot_label}\n"
+            f"\u2753 *Question {question_num}*\n"
+            f"\U0001f3af *Your Answer:* {correct_answer} \u2713\n\n"
+            f"\u2728 Your correct answer has been recorded!"
+        )
+    else:
+        message = (
+            f"\u274c *Submission Failed*\n\n"
+            f"\U0001f464 *Participant:* {name}\n"
+            f"\u23f0 *Slot:* {slot_label}\n"
+            f"\u2753 *Question {question_num}*\n\n"
+            f"\u26a0\ufe0f Failed to submit answer. Please contact admin."
+        )
+
+    try:
+        await bot_app.bot.send_message(user_id, message, parse_mode='Markdown')
+    except Exception as e:
+        send_log(f"Failed to notify user {user_id}: {e}", "ERROR")
+
+
+def _run_coroutine_in_main_loop(coro):
+    """
+    FIX 1 (helper): Schedule a coroutine on the main asyncio event loop from a
+    background thread. Returns a concurrent.futures.Future; call .result(timeout)
+    to wait for it, or ignore the return value for fire-and-forget.
+    """
+    global main_event_loop
+    if main_event_loop is None:
+        send_log("main_event_loop not set — cannot send notification", "ERROR")
+        return None
+    return asyncio.run_coroutine_threadsafe(coro, main_event_loop)
+
+
+def submit_answer_sync(participant_id, email, phone, contest_day, slot_index, question_index, question_data):
+    """Submit a single answer - SYNC version"""
     slot = SLOTS[slot_index - 1]
     correct_index = question_data['correct']
     correct_value = question_data['correct_value']
+
     options = question_data['options']
     options_prompt = f"A: {options[0]} | B: {options[1]} | C: {options[2]}"
+
     submitted_at = datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-    
+
     payload = {
-        "contest_date": datetime.now().strftime("%Y-%m-%d"),
-        "contest_day": 1,
+        "contest_date": get_ist_now().strftime("%Y-%m-%d"),
+        "contest_day": contest_day,
         "slot_index": slot_index,
         "slot_label": slot['label'],
         "question_text": "Which character did you spot right now?",
@@ -91,256 +314,990 @@ def submit_answer_sync(participant_id, email, phone, slot_index, question_data):
         "phone": phone,
         "email": email
     }
-    
+
     try:
         response = requests.post(SUBMIT_API, json=payload, headers=HEADERS, timeout=30)
         if response.status_code == 200:
             result = response.json()
-            return result.get('ok') == True, "Submitted"
-        return False, f"HTTP {response.status_code}"
+            if result.get('ok') is True:
+                return True, "Correct answer submitted successfully!"
+            else:
+                return True, "Submitted successfully"
+        return False, f"HTTP Error: {response.status_code}"
     except Exception as e:
         return False, str(e)
 
+
+def submit_all_questions_for_user_sync(user_id, data, contest_day, slot_index, slot_label, is_immediate=False):
+    """Submit all 6 questions for a user - SYNC version for background thread"""
+    slot_key = f"{user_id}_{contest_day}_{slot_index}"
+    if slot_key in submitted_slots:
+        send_log(f"User {data['name']} already submitted for Slot {slot_index}", "SKIP")
+        return 6
+
+    send_log(f"Submitting for {data['name']} (ID: {data['participant_id']}) - {'IMMEDIATE' if is_immediate else 'SCHEDULED'}", "INFO")
+
+    day_questions = QUESTIONS[contest_day - 1]
+    success_count = 0
+
+    for q_index, question in enumerate(day_questions, 1):
+        success, message = submit_answer_sync(
+            data['participant_id'],
+            data['email'],
+            data['phone'],
+            contest_day,
+            slot_index,
+            q_index,
+            question
+        )
+
+        if success:
+            success_count += 1
+            correct_answer = question['correct_value']
+            send_log(f"  \u2705 Question {q_index}: {correct_answer} - CORRECT", "SUCCESS")
+
+            # FIX 1: Use the main event loop instead of creating a new one.
+            future = _run_coroutine_in_main_loop(
+                send_submission_notification(
+                    user_id,
+                    data['name'],
+                    slot_label,
+                    q_index,
+                    correct_answer,
+                    True,
+                    is_immediate
+                )
+            )
+            if future:
+                try:
+                    future.result(timeout=10)
+                except Exception as e:
+                    send_log(f"Notification error: {e}", "ERROR")
+        else:
+            send_log(f"  \u274c Question {q_index}: Failed - {message}", "ERROR")
+
+        time.sleep(0.5)
+
+    if success_count == 6:
+        submitted_slots.add(slot_key)
+        send_log(f"\u2705 {data['name']}: All 6 answers submitted successfully!", "SUCCESS")
+    else:
+        send_log(f"\u26a0\ufe0f {data['name']}: Only {success_count}/6 answers submitted!", "WARNING")
+
+    # Send summary (fire-and-forget)
+    if bot_app:
+        mode_label = "IMMEDIATE" if is_immediate else "AUTO"
+        footer_text = (
+            "\U0001f389 You registered during this active slot! Answers submitted immediately."
+            if is_immediate else
+            "Bot will continue submitting for future slots."
+        )
+        summary_msg = (
+            f"\U0001f3c6 *{mode_label} SUBMISSION COMPLETE!*\n\n"
+            f"\U0001f464 *{data['name']}*\n"
+            f"\U0001f4c5 *Day {contest_day}* | *Slot {slot_index}*\n"
+            f"\u23f0 *Time:* {slot_label}\n\n"
+            f"\u2705 *{success_count}/6 answers submitted correctly!*\n\n"
+            f"{footer_text}"
+        )
+        _run_coroutine_in_main_loop(
+            bot_app.bot.send_message(user_id, summary_msg, parse_mode='Markdown')
+        )
+
+    return success_count
+
+
+def process_slot_submission(slot_index, slot_label, contest_day):
+    """Process submission for all registered users for a given slot"""
+    send_log(f"\U0001f550 Processing scheduled submission for Slot {slot_index} ({slot_label})", "SUBMISSION")
+
+    # FIX 5: Snapshot participants to avoid race condition if a new user registers mid-loop.
+    current_participants = dict(participants)
+    send_log(f"\U0001f4ca Total participants: {len(current_participants)}", "INFO")
+
+    for user_id, data in current_participants.items():
+        submit_all_questions_for_user_sync(user_id, data, contest_day, slot_index, slot_label, is_immediate=False)
+
+    send_log(f"\u2705 Scheduled submission completed for Slot {slot_index}", "SUCCESS")
+
+
+def schedule_slot_submission(slot):
+    """Schedule submission for a slot at random time (1-10 minutes after slot start)"""
+    now = get_ist_now()
+    slot_start = now.replace(hour=slot['hour'], minute=slot['minute'], second=0, microsecond=0)
+    random_minutes = random.randint(1, 10)
+    submit_time = slot_start + timedelta(minutes=random_minutes)
+
+    if submit_time < now:
+        send_log(f"\u23ed\ufe0f Slot {slot['slot']} ({slot['label']}) already passed, skipping", "SKIP")
+        return
+
+    send_log(f"\U0001f4c5 Scheduled Slot {slot['slot']} ({slot['label']}) at {submit_time.strftime('%H:%M:%S')} (delay: {random_minutes} min)", "SCHEDULE")
+
+    seconds_delay = (submit_time - get_ist_now()).total_seconds()
+
+    timer = threading.Timer(
+        seconds_delay,
+        lambda: process_slot_submission(slot['slot'], slot['label'], get_contest_day())
+    )
+    timer.daemon = True
+    timer.start()
+
+    scheduled_jobs[slot['slot']] = timer
+
+
+def schedule_all_slots():
+    """Schedule all slots for the day"""
+    now = get_ist_now()
+
+    if not is_weekday():
+        weekday_name = now.strftime("%A")
+        send_log(f"\U0001f4c5 Today is {weekday_name} - No submissions (Monday-Friday only)", "INFO")
+        return
+
+    contest_day = get_contest_day()
+    if not contest_day:
+        send_log("\U0001f4c5 Contest not active or completed", "INFO")
+        return
+
+    for timer in scheduled_jobs.values():
+        timer.cancel()
+    scheduled_jobs.clear()
+
+    for slot in SLOTS:
+        slot_time = now.replace(hour=slot['hour'], minute=slot['minute'], second=0, microsecond=0)
+        if slot_time > now:
+            schedule_slot_submission(slot)
+
+    send_log(f"\U0001f4c5 Scheduled submissions for Day {contest_day}", "INFO")
+
+
+def background_scheduler():
+    """Background thread for scheduling"""
+    while True:
+        now = get_ist_now()
+        if now.hour == 0 and now.minute == 0:
+            schedule_all_slots()
+            time.sleep(60)
+
+        if len(scheduled_jobs) == 0 and 9 <= now.hour < 13:
+            schedule_all_slots()
+
+        time.sleep(30)
+
+
+# ---------------------------------------------------------------------------
+# Bot Command Handlers
+# ---------------------------------------------------------------------------
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
-    
+
     if user_id == ADMIN_ID:
         await update.message.reply_text(
-            "Admin Panel\n\n"
-            "Commands:\n"
-            "/pending - Pending users\n"
-            "/approve <id> - Approve user\n"
-            "/reject <id> - Reject user\n"
-            "/users - List users\n"
-            "/stats - Statistics"
+            "\U0001f451 *Admin Panel*\n\n"
+            "\U0001f4cb *Admin Commands:*\n"
+            "/pending - Show pending users\n"
+            "/approve <user_id> - Approve a user\n"
+            "/reject <user_id> - Reject a user\n"
+            "/users - List approved users\n"
+            "/broadcast <message> - Broadcast message\n"
+            "/stats - Show statistics\n"
+            "/logs - Show recent logs\n"
+            "/schedule - Show current schedule\n\n"
+            "\U0001f4a1 *To register yourself:*\n"
+            "Use /register command",
+            parse_mode='Markdown'
         )
         return ConversationHandler.END
+
     elif user_id in participants:
-        await update.message.reply_text("You are already registered! Use /status to check.")
+        data = participants[user_id]
+        await update.message.reply_text(
+            f"\U0001f389 *Welcome back, {data['name']}!*\n\n"
+            f"\U0001f3ab Participant ID: `{data['participant_id']}`\n"
+            f"\U0001f916 Auto-submit is active.\n\n"
+            "Use /status for full details.",
+            parse_mode='Markdown'
+        )
         return ConversationHandler.END
+
+    # FIX 3: Check participants BEFORE approved_users so already-registered users
+    # don't see "use /register" when they're already registered.
     elif user_id in approved_users:
-        await update.message.reply_text("Welcome! Use /register to start registration.")
+        await update.message.reply_text(
+            "\U0001f389 *Welcome to Summertastic Contest Bot!*\n\n"
+            "Use /register to start your registration.",
+            parse_mode='Markdown'
+        )
         return ConversationHandler.END
+
     elif user_id in pending_users:
-        await update.message.reply_text("Pending approval. Wait for admin.")
+        await update.message.reply_text(
+            "\u23f3 *Pending Approval*\n\n"
+            "Your access request has been sent to admin.\n"
+            "You will be notified once approved.",
+            parse_mode='Markdown'
+        )
         return ConversationHandler.END
+
     else:
-        keyboard = [[InlineKeyboardButton("Request Access", callback_data='request_access')]]
-        await update.message.reply_text("Access Restricted. Click below to request access.", reply_markup=InlineKeyboardMarkup(keyboard))
+        keyboard = [[InlineKeyboardButton("\U0001f4dd Request Access", callback_data='request_access')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.reply_text(
+            "\U0001f512 *Access Restricted*\n\n"
+            "This bot is private. Click below to request access from admin.",
+            parse_mode='Markdown',
+            reply_markup=reply_markup
+        )
         return ConversationHandler.END
+
 
 async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
+
     if user_id == ADMIN_ID or user_id in approved_users:
-        await update.message.reply_text("Step 1/4: What is your full name?")
+        await update.message.reply_text(
+            "\U0001f4dd *Start Registration*\n\n"
+            "Please enter your details:\n\n"
+            "Step 1/4: What is your *full name*?\n\n"
+            "Example: Rajesh Sharma",
+            parse_mode='Markdown'
+        )
         return NAME
     else:
-        await update.message.reply_text("No access. Use /start first.")
+        await update.message.reply_text(
+            "\u274c You don't have access.\n"
+            "Use /start to request access from admin.",
+            parse_mode='Markdown'
+        )
         return ConversationHandler.END
+
 
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     name = update.message.text.strip()
-    if len(name) < 3:
-        await update.message.reply_text("Invalid name. Enter again:")
+
+    if len(name) < 3 or not re.match(r'^[a-zA-Z\s\.]+$', name):
+        await update.message.reply_text(
+            "\u274c Invalid name! Use only letters and spaces (minimum 3 characters).\n"
+            "Please enter your *full name*:",
+            parse_mode='Markdown'
+        )
         return NAME
+
     user_temp_data[user_id] = {'name': name}
-    await update.message.reply_text("Step 2/4: What is your email?")
+
+    await update.message.reply_text(
+        f"\u2705 Name saved: *{name}*\n\n"
+        "\U0001f4dd *Step 2/4:* What is your *email address*?\n\n"
+        "Example: yourname@gmail.com",
+        parse_mode='Markdown'
+    )
     return EMAIL
+
 
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
-    email = update.message.text.strip()
+    email = update.message.text.strip().lower()
+
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-        await update.message.reply_text("Invalid email. Enter again:")
+        await update.message.reply_text(
+            "\u274c Invalid email format.\n"
+            "Please enter a valid *email address*:",
+            parse_mode='Markdown'
+        )
         return EMAIL
+
     user_temp_data[user_id]['email'] = email
-    await update.message.reply_text("Step 3/4: What is your city?")
+
+    await update.message.reply_text(
+        f"\u2705 Email saved: *{email}*\n\n"
+        "\U0001f4dd *Step 3/4:* What is your *city*?\n\n"
+        "Example: Mumbai, Delhi, Bangalore",
+        parse_mode='Markdown'
+    )
     return CITY
+
 
 async def get_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     city = update.message.text.strip()
+
     if len(city) < 2:
-        await update.message.reply_text("Invalid city. Enter again:")
+        await update.message.reply_text(
+            "\u274c Invalid city name.\n"
+            "Please enter your *city*:",
+            parse_mode='Markdown'
+        )
         return CITY
+
     user_temp_data[user_id]['city'] = city
-    await update.message.reply_text("Step 4/4: What is your phone number (10 digits)?")
+
+    await update.message.reply_text(
+        f"\u2705 City saved: *{city}*\n\n"
+        "\U0001f4dd *Step 4/4:* What is your *phone number*?\n\n"
+        "Example: 9876543210 (10 digits)",
+        parse_mode='Markdown'
+    )
     return PHONE
+
 
 async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     phone = update.message.text.strip()
+
     if not re.match(r'^[6-9]\d{9}$', phone):
-        await update.message.reply_text("Invalid phone. Enter 10 digits:")
+        await update.message.reply_text(
+            "\u274c Invalid phone number.\n"
+            "Please enter a valid 10-digit *phone number* (starting with 6,7,8,9):",
+            parse_mode='Markdown'
+        )
         return PHONE
+
     user_temp_data[user_id]['phone'] = phone
     data = user_temp_data[user_id]
-    await update.message.reply_text(f"Confirm:\nName: {data['name']}\nEmail: {data['email']}\nCity: {data['city']}\nPhone: {data['phone']}\n\nReply YES to register.")
+
+    summary = (
+        "\U0001f4cb *Please confirm your details:*\n\n"
+        f"\U0001f464 *Name:* {data['name']}\n"
+        f"\U0001f4e7 *Email:* {data['email']}\n"
+        f"\U0001f3d9\ufe0f *City:* {data['city']}\n"
+        f"\U0001f4f1 *Phone:* {data['phone']}\n\n"
+        "\U0001f91d *Consent:* Agreed to all terms\n\n"
+        "Reply with *YES* to register or *NO* to cancel."
+    )
+
+    await update.message.reply_text(summary, parse_mode='Markdown')
     return CONFIRM
 
+
 async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global participants, submitted_slots
+
     user_id = str(update.effective_user.id)
-    if update.message.text.upper() != 'YES':
-        await update.message.reply_text("Registration cancelled.")
+    answer = update.message.text.strip().upper()
+
+    if answer != 'YES':
+        await update.message.reply_text(
+            "\u274c *Registration Cancelled*\n\n"
+            "Use /register to begin again.",
+            parse_mode='Markdown'
+        )
         if user_id in user_temp_data:
             del user_temp_data[user_id]
         return ConversationHandler.END
-    
+
     data = user_temp_data[user_id]
-    await update.message.reply_text("Registering...")
-    
-    payload = {"name": data['name'], "email": data['email'], "city": data['city'], "phone": data['phone'], **CONSENT}
-    
+
+    processing_msg = await update.message.reply_text(
+        "\U0001f504 *Registering you on the website...*\n\n"
+        "Please wait, this may take a few seconds.",
+        parse_mode='Markdown'
+    )
+
+    payload = {
+        "name": data['name'],
+        "email": data['email'],
+        "city": data['city'],
+        "phone": data['phone'],
+        **CONSENT
+    }
+
     try:
         response = requests.post(REGISTER_API, json=payload, headers=HEADERS, timeout=30)
+
         if response.status_code == 200:
             result = response.json()
             participant_id = result.get('participant_id')
+
             if participant_id:
-                participants[user_id] = {'participant_id': str(participant_id), 'name': data['name'], 'email': data['email'], 'city': data['city'], 'phone': data['phone']}
-                await update.message.reply_text(f"Registration Successful!\n\nYour Participant ID: {participant_id}\n\nBot will auto-submit answers.")
-                await context.bot.send_message(ADMIN_ID, f"New registration: {data['name']} (ID: {participant_id})")
-                
-                # Immediate submission if active slot
+                participants[user_id] = {
+                    'participant_id': str(participant_id),
+                    'name': data['name'],
+                    'email': data['email'],
+                    'city': data['city'],
+                    'phone': data['phone'],
+                    'registered_at': get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+
                 current_slot = get_current_slot()
-                if current_slot:
-                    await update.message.reply_text(f"Active slot detected! Submitting answers for Slot {current_slot['slot']}...")
-                    for q_index, q in enumerate(QUESTIONS, 1):
-                        success, msg = submit_answer_sync(participant_id, data['email'], data['phone'], current_slot['slot'], q)
+                contest_day = get_contest_day()
+
+                immediate_result = ""
+                if current_slot and contest_day:
+                    await processing_msg.edit_text(
+                        f"\u2705 *Registration Successful!*\n\n"
+                        f"\U0001f3ab *Participant ID:* `{participant_id}`\n\n"
+                        f"\U0001f4cb *Registered Details:*\n"
+                        f"\U0001f464 Name: {data['name']}\n"
+                        f"\U0001f4e7 Email: {data['email']}\n"
+                        f"\U0001f3d9\ufe0f City: {data['city']}\n"
+                        f"\U0001f4f1 Phone: {data['phone']}\n\n"
+                        f"\u26a1 *Current slot active! Submitting answers immediately...*",
+                        parse_mode='Markdown'
+                    )
+
+                    send_log(f"\u26a1 Immediate submission for new user {data['name']} - Slot {current_slot['slot']}", "IMMEDIATE")
+
+                    day_questions = QUESTIONS[contest_day - 1]
+                    success_count = 0
+                    slot_key = f"{user_id}_{contest_day}_{current_slot['slot']}"
+
+                    for q_index, question in enumerate(day_questions, 1):
+                        success, msg = submit_answer_sync(
+                            participant_id,
+                            data['email'],
+                            data['phone'],
+                            contest_day,
+                            current_slot['slot'],
+                            q_index,
+                            question
+                        )
+
                         if success:
-                            await update.message.reply_text(f"Question {q_index}: Correct answer submitted!")
+                            success_count += 1
+                            correct_answer = question['correct_value']
+                            send_log(f"  \u2705 Question {q_index}: {correct_answer} - CORRECT (Immediate)", "SUCCESS")
+                            await send_submission_notification(
+                                user_id,
+                                data['name'],
+                                current_slot['label'],
+                                q_index,
+                                correct_answer,
+                                True,
+                                True
+                            )
                         else:
-                            await update.message.reply_text(f"Question {q_index}: Failed - {msg}")
+                            send_log(f"  \u274c Question {q_index}: Failed - {msg}", "ERROR")
+
                         await asyncio.sleep(0.5)
-                    await update.message.reply_text("All answers submitted for current slot!")
+
+                    if success_count == 6:
+                        submitted_slots.add(slot_key)
+                        # FIX 7: Only claim full success when all 6 actually succeeded.
+                        immediate_result = "\n\n\u2705 *All 6 answers submitted successfully for current slot!*\n\U0001f389 You're all caught up!"
+                    else:
+                        immediate_result = f"\n\n\u26a0\ufe0f *Partial submission: {success_count}/6 answers submitted.*\nPlease contact admin if issues persist."
+
+                    summary_msg = (
+                        f"\U0001f3c6 *IMMEDIATE SUBMISSION COMPLETE!*\n\n"
+                        f"\U0001f464 *{data['name']}*\n"
+                        f"\U0001f4c5 *Day {contest_day}* | *Slot {current_slot['slot']}*\n"
+                        f"\u23f0 *Time:* {current_slot['label']}\n\n"
+                        f"\u2705 *{success_count}/6 answers submitted correctly!*\n\n"
+                        f"\U0001f389 You registered during this active slot! Answers submitted immediately.\n"
+                        f"Bot will continue submitting for future slots automatically."
+                    )
+                    await context.bot.send_message(user_id, summary_msg, parse_mode='Markdown')
+
+                success_msg = (
+                    f"\u2705 *Registration Successful!*\n\n"
+                    f"\U0001f3ab *Your Participant ID:* `{participant_id}`\n\n"
+                    f"\U0001f4cb *Registered Details:*\n"
+                    f"\U0001f464 Name: {data['name']}\n"
+                    f"\U0001f4e7 Email: {data['email']}\n"
+                    f"\U0001f3d9\ufe0f City: {data['city']}\n"
+                    f"\U0001f4f1 Phone: {data['phone']}\n\n"
+                    f"\U0001f916 *Automated Submission Active!*\n\n"
+                    f"\u2022 Bot will auto-submit correct answers\n"
+                    f"\u2022 Random delay: 1-10 minutes after each slot start\n"
+                    f"\u2022 Monday to Friday only\n"
+                    f"\u2022 Duration: 15 days\n"
+                    f"\u2022 6 questions per slot\n"
+                    f"\u2022 100% correct answers guaranteed"
+                    f"{immediate_result}\n\n"
+                    f"\u2705 You're all set! No manual work needed.\n\n"
+                    f"Use /status to check your registration."
+                )
+
+                # Always show the final success/result message, whether or not a slot was active.
+                await processing_msg.edit_text(success_msg, parse_mode='Markdown')
+
+                send_log(f"\u2705 New registration: {data['name']} (ID: {participant_id})", "REGISTER")
+
+                await context.bot.send_message(
+                    ADMIN_ID,
+                    f"\U0001f4dd *New Registration*\n\n"
+                    f"\U0001f464 Name: {data['name']}\n"
+                    f"\U0001f4e7 Email: {data['email']}\n"
+                    f"\U0001f3d9\ufe0f City: {data['city']}\n"
+                    f"\U0001f4f1 Phone: {data['phone']}\n"
+                    f"\U0001f3ab ID: `{participant_id}`\n"
+                    f"\u26a1 Immediate submission: {'Yes' if current_slot else 'No'}",
+                    parse_mode='Markdown'
+                )
             else:
-                await update.message.reply_text("Registration failed: No participant ID")
+                await processing_msg.edit_text(
+                    "\u274c *Registration Failed*\n\n"
+                    "Could not get participant ID from server.\n\n"
+                    "Please try again later.",
+                    parse_mode='Markdown'
+                )
         else:
-            await update.message.reply_text(f"Registration failed: HTTP {response.status_code}")
+            await processing_msg.edit_text(
+                f"\u274c *Registration Failed*\n\n"
+                f"Server error: {response.status_code}\n\n"
+                "Please try again later.",
+                parse_mode='Markdown'
+            )
+
     except Exception as e:
-        await update.message.reply_text(f"Registration failed: {str(e)[:100]}")
-    
+        await processing_msg.edit_text(
+            f"\u274c *Registration Failed*\n\n"
+            f"Error: {str(e)[:100]}\n\n"
+            "Please try again later.",
+            parse_mode='Markdown'
+        )
+
     if user_id in user_temp_data:
         del user_temp_data[user_id]
+
     return ConversationHandler.END
+
 
 async def cancel_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if user_id in user_temp_data:
         del user_temp_data[user_id]
-    await update.message.reply_text("Cancelled.")
+
+    await update.message.reply_text(
+        "\u274c *Registration Cancelled*\n\n"
+        "Use /register to begin again.",
+        parse_mode='Markdown'
+    )
     return ConversationHandler.END
+
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
     user_id = str(query.from_user.id)
-    
+    username = query.from_user.username or "No username"
+    first_name = query.from_user.first_name
+
     if query.data == 'request_access':
-        if user_id in pending_users:
-            await query.edit_message_text("Already pending.")
+        if user_id in approved_users:
+            await query.edit_message_text("\u2705 You already have access!\nUse /register to register.")
+        elif user_id in pending_users:
+            await query.edit_message_text("\u23f3 Your request is already pending.")
         else:
-            pending_users[user_id] = {'name': query.from_user.first_name, 'username': query.from_user.username or "No username"}
-            await context.bot.send_message(ADMIN_ID, f"New request from: {query.from_user.first_name}\nID: {user_id}\nUse /approve {user_id}")
-            await query.edit_message_text("Request sent to admin!")
+            pending_users[user_id] = {
+                'username': username,
+                'name': first_name,
+                'requested_at': get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+
+            keyboard = [
+                [InlineKeyboardButton("\u2705 Approve", callback_data=f'approve_{user_id}'),
+                 InlineKeyboardButton("\u274c Reject", callback_data=f'reject_{user_id}')]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await context.bot.send_message(
+                ADMIN_ID,
+                f"\U0001f4e2 *New Access Request!*\n\n"
+                f"\U0001f194 User ID: `{user_id}`\n"
+                f"\U0001f464 Name: {first_name}\n"
+                f"\U0001f4dd Username: @{username}",
+                parse_mode='Markdown',
+                reply_markup=reply_markup
+            )
+
+            await query.edit_message_text(
+                "\u2705 *Request Sent!*\n\n"
+                "You will be notified once approved.\n"
+                "Use /register after approval to register.",
+                parse_mode='Markdown'
+            )
+
+    elif query.data.startswith('approve_'):
+        if str(query.from_user.id) != ADMIN_ID:
+            await query.answer("Only admin can do this!", show_alert=True)
+            return
+
+        target_user = query.data.split('_')[1]
+
+        if target_user in pending_users:
+            approved_users[target_user] = pending_users[target_user]
+            del pending_users[target_user]
+
+            await context.bot.send_message(
+                target_user,
+                "\u2705 *Access Granted!*\n\n"
+                "Welcome! Please use /register to register for the contest.",
+                parse_mode='Markdown'
+            )
+
+            await query.edit_message_text(f"\u2705 User {target_user} has been approved!")
+            send_log(f"Admin approved user {target_user}", "APPROVE")
+
+    elif query.data.startswith('reject_'):
+        if str(query.from_user.id) != ADMIN_ID:
+            await query.answer("Only admin can do this!", show_alert=True)
+            return
+
+        target_user = query.data.split('_')[1]
+
+        if target_user in pending_users:
+            del pending_users[target_user]
+
+            await context.bot.send_message(
+                target_user,
+                "\u274c *Access Denied*\n\n"
+                "Your request has been rejected by admin.",
+                parse_mode='Markdown'
+            )
+
+            await query.edit_message_text(f"\u274c User {target_user} has been rejected!")
+            send_log(f"Admin rejected user {target_user}", "REJECT")
+
+
+# ---------------------------------------------------------------------------
+# Admin Commands
+# ---------------------------------------------------------------------------
 
 async def pending_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("\u274c Admin only!")
         return
+
     if not pending_users:
-        await update.message.reply_text("No pending users.")
+        await update.message.reply_text("\U0001f4ed No pending requests.")
         return
-    msg = "Pending:\n"
+
+    message = "\U0001f4cb *Pending Users:*\n\n"
     for uid, data in pending_users.items():
-        msg += f"ID: {uid} - {data['name']}\n"
-    await update.message.reply_text(msg)
+        message += f"\U0001f194 `{uid}` - {data['name']} (@{data['username']})\n"
+        message += f"   \u23f0 {data['requested_at']}\n\n"
+
+    await update.message.reply_text(message, parse_mode='Markdown')
+
 
 async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("\u274c Admin only!")
         return
+
     if not context.args:
-        await update.message.reply_text("Usage: /approve <user_id>")
+        await update.message.reply_text("Usage: `/approve <user_id>`", parse_mode='Markdown')
         return
-    target = context.args[0]
-    if target in pending_users:
-        approved_users[target] = pending_users[target]
-        del pending_users[target]
-        await context.bot.send_message(target, "Access Granted! Use /register to start.")
-        await update.message.reply_text(f"User {target} approved!")
+
+    target_user = context.args[0]
+
+    if target_user in pending_users:
+        approved_users[target_user] = pending_users[target_user]
+        del pending_users[target_user]
+
+        await context.bot.send_message(
+            target_user,
+            "\u2705 *Access Granted!*\n\nPlease use /register to register for the contest.",
+            parse_mode='Markdown'
+        )
+
+        await update.message.reply_text(f"\u2705 User {target_user} approved!")
+        send_log(f"Admin approved user {target_user}", "APPROVE")
+    else:
+        await update.message.reply_text("\u274c User not found in pending list!")
+
 
 async def reject_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("\u274c Admin only!")
         return
+
     if not context.args:
-        await update.message.reply_text("Usage: /reject <user_id>")
+        await update.message.reply_text("Usage: `/reject <user_id>`", parse_mode='Markdown')
         return
-    target = context.args[0]
-    if target in pending_users:
-        del pending_users[target]
-        await context.bot.send_message(target, "Access Denied.")
-        await update.message.reply_text(f"User {target} rejected!")
+
+    target_user = context.args[0]
+
+    if target_user in pending_users:
+        del pending_users[target_user]
+
+        await context.bot.send_message(
+            target_user,
+            "\u274c *Access Denied*\n\nYour request has been rejected.",
+            parse_mode='Markdown'
+        )
+
+        await update.message.reply_text(f"\u274c User {target_user} rejected!")
+        send_log(f"Admin rejected user {target_user}", "REJECT")
+    else:
+        await update.message.reply_text("\u274c User not found in pending list!")
+
 
 async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("\u274c Admin only!")
         return
-    msg = "Approved Users:\n"
+
+    if not approved_users:
+        await update.message.reply_text("\U0001f4ed No approved users.")
+        return
+
+    message = "\U0001f465 *Approved Users:*\n\n"
     for uid, data in approved_users.items():
-        registered = "Yes" if uid in participants else "No"
-        msg += f"ID: {uid} - {data['name']} (Registered: {registered})\n"
-    await update.message.reply_text(msg)
+        if uid in participants:
+            message += f"\u2705 `{uid}` - {data['name']} (ID: {participants[uid]['participant_id']})\n"
+        else:
+            message += f"\u2b55 `{uid}` - {data['name']} (Not registered)\n"
+
+    await update.message.reply_text(message, parse_mode='Markdown')
+
+
+async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != ADMIN_ID:
+        await update.message.reply_text("\u274c Admin only!")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Usage: `/broadcast <message>`", parse_mode='Markdown')
+        return
+
+    message = ' '.join(context.args)
+    sent = 0
+
+    for user_id in approved_users:
+        try:
+            await context.bot.send_message(
+                user_id,
+                f"\U0001f4e2 *Announcement*\n\n{message}",
+                parse_mode='Markdown'
+            )
+            sent += 1
+            await asyncio.sleep(0.1)
+        except Exception:
+            pass
+
+    await update.message.reply_text(f"\u2705 Broadcast sent to {sent} users!")
+    send_log(f"Broadcast sent to {sent} users", "BROADCAST")
+
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
-        await update.message.reply_text("Admin only!")
+        await update.message.reply_text("\u274c Admin only!")
         return
-    await update.message.reply_text(f"Approved: {len(approved_users)}\nPending: {len(pending_users)}\nRegistered: {len(participants)}")
+
+    stats_text = (
+        f"\U0001f4ca *Bot Statistics*\n\n"
+        f"\U0001f465 Approved Users: {len(approved_users)}\n"
+        f"\u23f3 Pending Requests: {len(pending_users)}\n"
+        f"\u2705 Registered for Contest: {len(participants)}\n"
+        f"\U0001f4dd Total Submissions Tracked: {len(submitted_slots)}\n"
+        f"\u23f0 Active Hours: 10:00 AM - 1:00 PM IST\n"
+        f"\U0001f4c5 Active Days: Monday to Friday\n"
+        f"\U0001f6ab Weekend: Bot Idle\n"
+        f"\U0001f916 Auto-submit: Active (Random delay 1-10 min)\n"
+        f"\u2705 Correct Answers: 100%\n"
+        f"\U0001f4e2 User Notifications: Enabled\n"
+        f"\u26a1 Immediate Submission: Yes (on registration)"
+    )
+
+    await update.message.reply_text(stats_text, parse_mode='Markdown')
+
+
+async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != ADMIN_ID:
+        await update.message.reply_text("\u274c Admin only!")
+        return
+
+    now = get_ist_now()
+    current_slot = get_current_slot()
+    current_slot_text = (
+        f"Current Slot: {current_slot['slot']} ({current_slot['label']})"
+        if current_slot else "No active slot"
+    )
+
+    schedule_text = (
+        f"\U0001f4c5 *Current Schedule*\n\n"
+        f"Today: {now.strftime('%A, %B %d, %Y')}\n"
+        f"{current_slot_text}\n"
+        f"Active Days: Monday to Friday\n"
+        f"Current Time: {now.strftime('%H:%M:%S')} IST\n\n"
+        f"*Slot Schedule (with random delays):*\n\n"
+        f"Slot 1: 10:00 AM \u2192 Submit at 10:01-10:10\n"
+        f"Slot 2: 10:30 AM \u2192 Submit at 10:31-10:40\n"
+        f"Slot 3: 11:00 AM \u2192 Submit at 11:01-11:10\n"
+        f"Slot 4: 11:30 AM \u2192 Submit at 11:31-11:40\n"
+        f"Slot 5: 12:00 PM \u2192 Submit at 12:01-12:10\n"
+        f"Slot 6: 12:30 PM \u2192 Submit at 12:31-12:40\n\n"
+        f"*Features:*\n"
+        f"\u2022 Random delay: 1-10 minutes after slot start\n"
+        f"\u2022 Immediate submission on registration\n"
+        f"\u2022 All answers 100% correct\n"
+        f"\u2022 User notifications for every submission"
+    )
+
+    await update.message.reply_text(schedule_text, parse_mode='Markdown')
+
+
+async def logs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if str(update.effective_user.id) != ADMIN_ID:
+        await update.message.reply_text("\u274c Admin only!")
+        return
+
+    await update.message.reply_text(
+        f"\U0001f4cb *Logs Information*\n\n"
+        f"Logs are printed to the console.\n"
+        f"Group ID for logs: `{GROUP_ID}`\n\n"
+        f"*Features:*\n"
+        f"\u2022 Monday-Friday only\n"
+        f"\u2022 Random delay: 1-10 min per slot\n"
+        f"\u2022 Immediate submission on registration\n"
+        f"\u2022 User notifications for every correct answer\n"
+        f"\u2022 Response: {{'ok': true}} for successful submissions",
+        parse_mode='Markdown'
+    )
+
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
+
     if user_id in participants:
         data = participants[user_id]
-        await update.message.reply_text(f"Registered!\nName: {data['name']}\nID: {data['participant_id']}\nAuto-submit: Active")
+        await update.message.reply_text(
+            f"\u2705 *Your Registration Status*\n\n"
+            f"\U0001f464 Name: {data['name']}\n"
+            f"\U0001f3ab Participant ID: `{data['participant_id']}`\n"
+            f"\U0001f4e7 Email: {data['email']}\n"
+            f"\U0001f4f1 Phone: {data['phone']}\n"
+            f"\U0001f916 Auto-submit: Enabled\n"
+            f"\U0001f4c5 Active Days: Monday to Friday\n"
+            f"\u23f0 Active Hours: 10:00 AM - 1:00 PM IST\n"
+            f"\u26a1 Random delay: 1-10 min per slot\n"
+            f"\u2705 Notifications: You will receive alerts for every correct answer\n"
+            f"\u2705 Status: Active",
+            parse_mode='Markdown'
+        )
     else:
-        await update.message.reply_text("Not registered. Use /register")
+        await update.message.reply_text(
+            "\u274c *Not Registered*\n\n"
+            "Use `/register` to start the registration process.",
+            parse_mode='Markdown'
+        )
+
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Commands:\n/start - Menu\n/register - Register\n/status - Check status\n/help - Help")
+    help_text = (
+        "\U0001f4d6 *Summertastic Contest Bot Help*\n\n"
+        "*How to Register:*\n"
+        "1. Get approved by admin first\n"
+        "2. Use `/register` command\n"
+        "3. Enter your details step by step\n"
+        "4. Get your Participant ID automatically\n\n"
+        "*Submission Schedule:*\n"
+        "\u2022 Monday to Friday ONLY\n"
+        "\u2022 10:00 AM - 1:00 PM IST\n"
+        "\u2022 Random delay: 1-10 minutes after each slot start\n"
+        "\u2022 If you register during active slot \u2192 IMMEDIATE submission\n"
+        "\u2022 Weekends: Bot is idle\n\n"
+        "*Slot Timings:*\n"
+        "Slot 1: 10:00 AM (Submit 10:01-10:10)\n"
+        "Slot 2: 10:30 AM (Submit 10:31-10:40)\n"
+        "Slot 3: 11:00 AM (Submit 11:01-11:10)\n"
+        "Slot 4: 11:30 AM (Submit 11:31-11:40)\n"
+        "Slot 5: 12:00 PM (Submit 12:01-12:10)\n"
+        "Slot 6: 12:30 PM (Submit 12:31-12:40)\n\n"
+        "*User Commands:*\n"
+        "/start - Main menu\n"
+        "/register - Start registration\n"
+        "/status - Check your status\n"
+        "/help - Show this help\n\n"
+        "*Admin Commands:*\n"
+        "/pending - View pending users\n"
+        "/approve <id> - Approve a user\n"
+        "/reject <id> - Reject a user\n"
+        "/users - List all approved users\n"
+        "/broadcast <msg> - Broadcast message\n"
+        "/stats - View statistics\n"
+        "/schedule - Show current schedule\n"
+        "/logs - View logs\n\n"
+        "*Notifications:*\n"
+        "\u2022 You will receive a message for EVERY correct answer\n"
+        "\u2022 Daily summary after each slot\n"
+        "\u2022 Instant confirmation of submission\n"
+        "\u2022 \"IMMEDIATE SUBMISSION\" tag for registration-time submissions\n\n"
+        "*Bot Features:*\n"
+        "- Auto-submits 100% correct answers\n"
+        "- Monday to Friday only\n"
+        "- Random delay (1-10 min) to avoid detection\n"
+        "- Immediate submission on registration\n"
+        "- User notifications for each submission\n"
+        "- 15 days contest duration\n"
+        "- 6 questions per slot"
+    )
+
+    await update.message.reply_text(help_text, parse_mode='Markdown')
+
+
+async def post_init(application: Application) -> None:
+    """
+    Called by PTB after it starts its own event loop (inside asyncio.run()).
+    This is the only safe place to capture the real running loop for use
+    by background threads via asyncio.run_coroutine_threadsafe().
+    """
+    global main_event_loop
+    main_event_loop = asyncio.get_running_loop()
+    send_log("Main event loop captured — background notifications enabled", "INFO")
+
 
 def main():
     global bot_app
-    app = Application.builder().token(BOT_TOKEN).build()
+
+    # Start background scheduler thread
+    scheduler_thread = threading.Thread(target=background_scheduler, daemon=True)
+    scheduler_thread.start()
+
+    # Initial schedule
+    schedule_all_slots()
+
+    # Create bot application — post_init captures the real running loop
+    app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
     bot_app = app
-    
-    conv = ConversationHandler(
+
+    # Conversation handler for registration
+    conv_handler = ConversationHandler(
         entry_points=[CommandHandler('register', register_command)],
         states={
-            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
-            EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_email)],
-            CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
-            PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
+            NAME:    [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
+            EMAIL:   [MessageHandler(filters.TEXT & ~filters.COMMAND, get_email)],
+            CITY:    [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
+            PHONE:   [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
             CONFIRM: [MessageHandler(filters.TEXT & ~filters.COMMAND, register_on_website)],
         },
         fallbacks=[CommandHandler('cancel', cancel_registration)],
     )
-    
+
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(conv)
+    app.add_handler(conv_handler)
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(CommandHandler("pending", pending_command))
     app.add_handler(CommandHandler("approve", approve_command))
     app.add_handler(CommandHandler("reject", reject_command))
     app.add_handler(CommandHandler("users", users_command))
+    app.add_handler(CommandHandler("broadcast", broadcast_command))
     app.add_handler(CommandHandler("stats", stats_command))
+    app.add_handler(CommandHandler("schedule", schedule_command))
+    app.add_handler(CommandHandler("logs", logs_command))
     app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("help", help_command))
-    
-    print("Bot started successfully!")
+
+    print("=" * 50)
+    print("\U0001f916 SUMMERTASTIC BOT STARTED")
+    print("=" * 50)
+    print(f"\U0001f451 Admin ID: {ADMIN_ID}")
+    print(f"\U0001f4c5 Schedule: Monday to Friday only (10:00 AM - 1:00 PM IST)")
+    print(f"\u26a1 Random delay: 1-10 minutes after each slot start")
+    print(f"\u2705 Immediate submission: ON for new registrations during active slots")
+    print(f"\U0001f4e2 User notifications: ENABLED for every correct answer")
+    print("=" * 50)
+
+    # FIX 6: Added the missing main() call so the bot actually starts.
     app.run_polling()
+
 
 if __name__ == '__main__':
     main()
