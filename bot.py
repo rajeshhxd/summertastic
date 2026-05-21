@@ -329,60 +329,57 @@ def submit_answer_sync(participant_id, email, phone, contest_day, slot_index, qu
 
 
 def submit_all_questions_for_user_sync(user_id, data, contest_day, slot_index, slot_label, is_immediate=False):
-    """Submit all 6 questions for a user - SYNC version for background thread"""
+    """Submit the ONE question that belongs to this slot for a user (SYNC, background thread).
+    Each slot has exactly one question: QUESTIONS[day-1][slot_index-1].
+    """
     slot_key = f"{user_id}_{contest_day}_{slot_index}"
     if slot_key in submitted_slots:
         send_log(f"User {data['name']} already submitted for Slot {slot_index}", "SKIP")
-        return 6
+        return True
 
-    send_log(f"Submitting for {data['name']} (ID: {data['participant_id']}) - {'IMMEDIATE' if is_immediate else 'SCHEDULED'}", "INFO")
+    send_log(f"Submitting for {data['name']} (ID: {data['participant_id']}) - Slot {slot_index} - {'IMMEDIATE' if is_immediate else 'SCHEDULED'}", "INFO")
 
-    day_questions = QUESTIONS[contest_day - 1]
-    success_count = 0
+    # One question per slot: index = slot_index - 1
+    question = QUESTIONS[contest_day - 1][slot_index - 1]
 
-    for q_index, question in enumerate(day_questions, 1):
-        success, message = submit_answer_sync(
-            data['participant_id'],
-            data['email'],
-            data['phone'],
-            contest_day,
-            slot_index,
-            q_index,
-            question
-        )
+    success, message = submit_answer_sync(
+        data['participant_id'],
+        data['email'],
+        data['phone'],
+        contest_day,
+        slot_index,
+        slot_index,   # question number = slot number
+        question
+    )
 
-        if success:
-            success_count += 1
-            correct_answer = question['correct_value']
-            send_log(f"  \u2705 Question {q_index}: {correct_answer} - CORRECT", "SUCCESS")
-
-            # FIX 1: Use the main event loop instead of creating a new one.
-            future = _run_coroutine_in_main_loop(
-                send_submission_notification(
-                    user_id,
-                    data['name'],
-                    slot_label,
-                    q_index,
-                    correct_answer,
-                    True,
-                    is_immediate
-                )
-            )
-            if future:
-                try:
-                    future.result(timeout=10)
-                except Exception as e:
-                    send_log(f"Notification error: {e}", "ERROR")
-        else:
-            send_log(f"  \u274c Question {q_index}: Failed - {message}", "ERROR")
-
-        time.sleep(0.5)
-
-    if success_count == 6:
+    if success:
         submitted_slots.add(slot_key)
-        send_log(f"\u2705 {data['name']}: All 6 answers submitted successfully!", "SUCCESS")
+        correct_answer = question['correct_value']
+        send_log(f"  \u2705 Slot {slot_index} answer: {correct_answer} - CORRECT", "SUCCESS")
+
+        future = _run_coroutine_in_main_loop(
+            send_submission_notification(
+                user_id,
+                data['name'],
+                slot_label,
+                slot_index,
+                correct_answer,
+                True,
+                is_immediate
+            )
+        )
+        if future:
+            try:
+                future.result(timeout=10)
+            except Exception as e:
+                send_log(f"Notification error: {e}", "ERROR")
     else:
-        send_log(f"\u26a0\ufe0f {data['name']}: Only {success_count}/6 answers submitted!", "WARNING")
+        send_log(f"  \u274c Slot {slot_index} answer failed - {message}", "ERROR")
+
+    if success:
+        send_log(f"\u2705 {data['name']}: Slot {slot_index} answer submitted!", "SUCCESS")
+    else:
+        send_log(f"\u26a0\ufe0f {data['name']}: Slot {slot_index} submission failed!", "WARNING")
 
     # Send summary (fire-and-forget)
     if bot_app:
@@ -397,7 +394,7 @@ def submit_all_questions_for_user_sync(user_id, data, contest_day, slot_index, s
             f"\U0001f464 *{data['name']}*\n"
             f"\U0001f4c5 *Day {contest_day}* | *Slot {slot_index}*\n"
             f"\u23f0 *Time:* {slot_label}\n\n"
-            f"\u2705 *{success_count}/6 answers submitted correctly!*\n\n"
+            f"\u2705 *Slot {slot_index} answer submitted correctly!*\n\n"
             f"{footer_text}"
         )
         _run_coroutine_in_main_loop(
@@ -741,53 +738,50 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
 
                     send_log(f"\u26a1 Immediate submission for new user {data['name']} - Slot {current_slot['slot']}", "IMMEDIATE")
 
-                    day_questions = QUESTIONS[contest_day - 1]
-                    success_count = 0
-                    slot_key = f"{user_id}_{contest_day}_{current_slot['slot']}"
+                    # Each slot has exactly ONE question: index = slot_number - 1
+                    slot_num = current_slot['slot']
+                    question = QUESTIONS[contest_day - 1][slot_num - 1]
+                    slot_key = f"{user_id}_{contest_day}_{slot_num}"
 
-                    for q_index, question in enumerate(day_questions, 1):
-                        success, msg = submit_answer_sync(
-                            participant_id,
-                            data['email'],
-                            data['phone'],
-                            contest_day,
-                            current_slot['slot'],
-                            q_index,
-                            question
-                        )
+                    success, msg = submit_answer_sync(
+                        participant_id,
+                        data['email'],
+                        data['phone'],
+                        contest_day,
+                        slot_num,
+                        slot_num,   # question number = slot number
+                        question
+                    )
 
-                        if success:
-                            success_count += 1
-                            correct_answer = question['correct_value']
-                            send_log(f"  \u2705 Question {q_index}: {correct_answer} - CORRECT (Immediate)", "SUCCESS")
-                            await send_submission_notification(
-                                user_id,
-                                data['name'],
-                                current_slot['label'],
-                                q_index,
-                                correct_answer,
-                                True,
-                                True
-                            )
-                        else:
-                            send_log(f"  \u274c Question {q_index}: Failed - {msg}", "ERROR")
-
-                        await asyncio.sleep(0.5)
-
-                    if success_count == 6:
+                    if success:
                         submitted_slots.add(slot_key)
-                        # FIX 7: Only claim full success when all 6 actually succeeded.
-                        immediate_result = "\n\n\u2705 *All 6 answers submitted successfully for current slot!*\n\U0001f389 You're all caught up!"
+                        correct_answer = question['correct_value']
+                        send_log(f"  \u2705 Slot {slot_num} answer: {correct_answer} - CORRECT (Immediate)", "SUCCESS")
+                        await send_submission_notification(
+                            user_id,
+                            data['name'],
+                            current_slot['label'],
+                            slot_num,
+                            correct_answer,
+                            True,
+                            True
+                        )
+                        immediate_result = (
+                            f"\n\n\u2705 *Slot {slot_num} answer submitted!*\n"
+                            f"\U0001f3af Answer: {correct_answer}\n"
+                            f"\U0001f389 You're all caught up!"
+                        )
                     else:
-                        immediate_result = f"\n\n\u26a0\ufe0f *Partial submission: {success_count}/6 answers submitted.*\nPlease contact admin if issues persist."
+                        send_log(f"  \u274c Slot {slot_num} answer failed - {msg}", "ERROR")
+                        immediate_result = f"\n\n\u26a0\ufe0f *Slot {slot_num} submission failed.* Please contact admin."
 
                     summary_msg = (
                         f"\U0001f3c6 *IMMEDIATE SUBMISSION COMPLETE!*\n\n"
                         f"\U0001f464 *{data['name']}*\n"
-                        f"\U0001f4c5 *Day {contest_day}* | *Slot {current_slot['slot']}*\n"
+                        f"\U0001f4c5 *Day {contest_day}* | *Slot {slot_num}*\n"
                         f"\u23f0 *Time:* {current_slot['label']}\n\n"
-                        f"\u2705 *{success_count}/6 answers submitted correctly!*\n\n"
-                        f"\U0001f389 You registered during this active slot! Answers submitted immediately.\n"
+                        f"\u2705 *Slot answer submitted correctly!*\n\n"
+                        f"\U0001f389 You registered during this active slot! Answer submitted immediately.\n"
                         f"Bot will continue submitting for future slots automatically."
                     )
                     await context.bot.send_message(user_id, summary_msg, parse_mode='Markdown')
