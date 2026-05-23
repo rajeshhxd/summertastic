@@ -204,9 +204,48 @@ bot_app = None
 scheduled_jobs = {}
 submitted_slots = set()
 
-# FIX 1: Store the main event loop so background threads can schedule coroutines safely
-# instead of creating new event loops (which crashes when the main loop is already running).
 main_event_loop = None
+
+DATA_FILE = "bot_data.json"
+
+
+def save_data():
+    """Persist all runtime data to disk so restarts don't lose participants."""
+    try:
+        payload = {
+            "pending_users": pending_users,
+            "approved_users": approved_users,
+            "participants": participants,
+            "submitted_slots": list(submitted_slots),
+        }
+        with open(DATA_FILE, "w") as f:
+            import json
+            json.dump(payload, f, indent=2)
+    except Exception as e:
+        send_log(f"Failed to save data: {e}", "ERROR")
+
+
+def load_data():
+    """Load persisted data on startup (no-op if file doesn't exist yet)."""
+    global pending_users, approved_users, participants, submitted_slots
+    import json, os
+    if not os.path.exists(DATA_FILE):
+        send_log("No saved data file found — starting fresh", "INFO")
+        return
+    try:
+        with open(DATA_FILE) as f:
+            payload = json.load(f)
+        pending_users.update(payload.get("pending_users", {}))
+        approved_users.update(payload.get("approved_users", {}))
+        participants.update(payload.get("participants", {}))
+        submitted_slots.update(payload.get("submitted_slots", []))
+        send_log(
+            f"Loaded saved data — {len(participants)} participants, "
+            f"{len(approved_users)} approved, {len(submitted_slots)} submissions tracked",
+            "INFO"
+        )
+    except Exception as e:
+        send_log(f"Failed to load data: {e}", "ERROR")
 
 
 def send_log(message, level="INFO"):
@@ -354,6 +393,7 @@ def submit_all_questions_for_user_sync(user_id, data, contest_day, slot_index, s
 
     if success:
         submitted_slots.add(slot_key)
+        save_data()
         correct_answer = question['correct_value']
         send_log(f"  \u2705 Slot {slot_index} answer: {correct_answer} - CORRECT", "SUCCESS")
 
@@ -718,6 +758,7 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
                     'phone': data['phone'],
                     'registered_at': get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
                 }
+                save_data()
 
                 current_slot = get_current_slot()
                 contest_day = get_contest_day()
@@ -755,6 +796,7 @@ async def register_on_website(update: Update, context: ContextTypes.DEFAULT_TYPE
 
                     if success:
                         submitted_slots.add(slot_key)
+                        save_data()
                         correct_answer = question['correct_value']
                         send_log(f"  \u2705 Slot {slot_num} answer: {correct_answer} - CORRECT (Immediate)", "SUCCESS")
                         await send_submission_notification(
@@ -883,6 +925,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'name': first_name,
                 'requested_at': get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
             }
+            save_data()
 
             keyboard = [
                 [InlineKeyboardButton("\u2705 Approve", callback_data=f'approve_{user_id}'),
@@ -917,6 +960,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if target_user in pending_users:
             approved_users[target_user] = pending_users[target_user]
             del pending_users[target_user]
+            save_data()
 
             await context.bot.send_message(
                 target_user,
@@ -937,6 +981,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if target_user in pending_users:
             del pending_users[target_user]
+            save_data()
 
             await context.bot.send_message(
                 target_user,
@@ -984,6 +1029,7 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if target_user in pending_users:
         approved_users[target_user] = pending_users[target_user]
         del pending_users[target_user]
+        save_data()
 
         await context.bot.send_message(
             target_user,
@@ -1010,6 +1056,7 @@ async def reject_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if target_user in pending_users:
         del pending_users[target_user]
+        save_data()
 
         await context.bot.send_message(
             target_user,
@@ -1240,6 +1287,9 @@ async def post_init(application: Application) -> None:
 
 def main():
     global bot_app
+
+    # Load all persisted data before doing anything else
+    load_data()
 
     # Start background scheduler thread
     scheduler_thread = threading.Thread(target=background_scheduler, daemon=True)
